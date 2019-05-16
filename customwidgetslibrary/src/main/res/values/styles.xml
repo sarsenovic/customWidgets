@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="LoadingDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/loading_dialog_color</item>
+    </style>
+
+    <style name="LoadingDialogStyle2" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/loading_dialog_color</item>
+        <item name="android:windowBackground">@color/transparent</item>
+    </style>
+
+</resources>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="PercentLinearLayout">
+        <attr name="widthPercent" format="float" />
+        <attr name="heightPercent" format="float" />
+    </declare-styleable>
+
+    <!--<declare-styleable name="CustomTextView">-->
+    <!--<attr name="fontName" format="string" />-->
+    <!--</declare-styleable>-->
+
+    <attr name="font_name" format="string" />
+    <attr name="font_variant" format="string" />
+    <attr name="defaultFontName" format="string" />
+    <attr name="defaultFontVariant" format="string" />
+
+    <attr name="aspectRatio" format="enum">
+        <enum name="cetiri_prema_tri" value="43" />
+        <enum name="sesnaest_prema_devet" value="169" />
+        <enum name="dva_prema_jedan" value="21" />
+    </attr>
+    <attr name="fixedParam" format="enum">
+        <enum name="fixed_width" value="0" />
+        <enum name="fixed_height" value="1" />
+    </attr>
+
+    <declare-styleable name="CustomTextView">
+        <attr name="font_name" />
+        <attr name="font_variant" />
+        <!--<attr name="aspectRatio" />-->
+        <!--<attr name="fixedParam" />-->
+    </declare-styleable>
+
+    <declare-styleable name="CustomAutocompleteTextView">
+        <attr name="font_name" />
+        <attr name="font_variant" />
+        <!--<attr name="aspectRatio" />-->
+        <!--<attr name="fixedParam" />-->
+    </declare-styleable>
+
+    <declare-styleable name="CustomEditText">
+        <attr name="font_name" />
+        <attr name="font_variant" />
+        <!--<attr name="aspectRatio" />-->
+        <!--<attr name="fixedParam" />-->
+    </declare-styleable>
+
+    <declare-styleable name="CustomButton">
+        <attr name="font_name" />
+        <attr name="font_variant" />
+        <!--<attr name="aspectRatio" />-->
+        <!--<attr name="fixedParam" />-->
+    </declare-styleable>
+
+    <declare-styleable name="CustomImageView">
+        <attr name="aspectRatio" />
+        <attr name="fixedParam" />
+        <!--<attr name="customHorizontalRatio" format="integer" />-->
+        <!--<attr name="customVerticalRatio" format="integer" />-->
+    </declare-styleable>
+
+    <declare-styleable name="ITSCustomCalendarView">
+        <attr name="calendarDatesTextColor" format="color" />
+        <attr name="calendarWeekDaysTextColor" format="color" />
+        <attr name="calendarBackgroundColor" format="color" />
+        <attr name="selectedDateTextColor" format="color" />
+        <attr name="selectedDateCircleIndicatorColor" format="color" />
+        <attr name="currentDateTextColor" format="color" />
+        <attr name="currentDateCircleIndicatorColor" format="color" />
+        <attr name="calendarTextSize" format="dimension" />
+        <attr name="calendarSpacingBetweenRows" format="float" />
+        <attr name="calendarRowHeight" format="float" />
+        <attr name="font_name" />
+        <attr name="font_variant" />
+    </declare-styleable>
+
+</resources>
