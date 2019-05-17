@@ -2,11 +2,11 @@
 <resources>
 
     <style name="LoadingDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <item name="colorAccent">@color/loading_dialog_color</item>
+        <item name="colorAccent">@color/red</item>
     </style>
 
     <style name="LoadingDialogStyle2" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <item name="colorAccent">@color/loading_dialog_color</item>
+        <item name="colorAccent">@color/red</item>
         <item name="android:windowBackground">@color/transparent</item>
     </style>
 
