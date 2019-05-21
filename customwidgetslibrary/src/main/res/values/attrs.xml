@@ -73,6 +73,7 @@
         <attr name="calendarRowHeight" format="float" />
         <attr name="targetHeight" format="dimension" />
         <attr name="currentDayBackgroundColor" format="color" />
+        <attr name="calendarWeekendDaysColor" format="color" />
         <attr name="font_name" />
         <attr name="font_variant" />
     </declare-styleable>

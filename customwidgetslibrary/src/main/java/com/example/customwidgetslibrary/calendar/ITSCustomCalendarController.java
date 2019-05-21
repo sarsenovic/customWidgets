@@ -9,6 +9,9 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorManager;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.TypedValue;
@@ -16,16 +19,19 @@ import android.view.MotionEvent;
 import android.view.VelocityTracker;
 import android.view.ViewConfiguration;
 import android.widget.OverScroller;
-import android.widget.Toast;
 
 import com.example.customwidgetslibrary.Calculations;
 import com.example.customwidgetslibrary.LoaderForFonts;
 import com.example.customwidgetslibrary.R;
 
+import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import static android.graphics.Color.DKGRAY;
+import static android.graphics.Color.RED;
 
 class ITSCustomCalendarController {
     private static final int VELOCITY_UNIT_PIXELS_PER_SECOND = 1000;
@@ -43,7 +49,7 @@ class ITSCustomCalendarController {
     private int selectedDateTextColor;
     private int selectedDateCircleIndicatorColor;
 
-    private int currentDateTextColor;
+    private int currentDateTextColor = Color.WHITE;
     private int currentDateCircleIndicatorColor;
 
     private int width;
@@ -87,6 +93,20 @@ class ITSCustomCalendarController {
     private boolean isSmoothScrolling;
     private boolean isScrolling;
     private long lastAutoScrollFromFling;
+    private int otherMonthDaysColor = Color.BLACK;
+    private boolean shouldSelectFirstDayOfMonthOnScroll = true;
+    private boolean shouldPaintWeekendDaysForOtherMonths = false;
+    private boolean shouldDisplayDividerForRows = false;
+    private int colorForWeekendDays;
+    private int rowsDividerColor;
+    private float rowsDividerHeight = 1;
+    private boolean show3DEffect = false;
+    private boolean showParallaxEffect = false;
+    private float densityParallax1, densityParallax15, densityParallax2;
+    private int currentDayIndicatorStyle;
+    private IndicatorShapes currentDayIndicatorShape;
+    private boolean shouldShowIndicatorForCurrentDay = false;
+    private int currentDayIndicatorColor;
 
     private OverScroller overScroller;
     private Rect textSizeRect;
@@ -97,11 +117,17 @@ class ITSCustomCalendarController {
     private Calendar todayCalendar;
     private Calendar previousMonthCalendar;
     private Paint dayPaint = new Paint();
+    private Paint shadowPaint;
     private Context context;
+    private float sensor_x, sensor_y, sensor_z;
+    private Paint parallaxPaint;
 
-    public ITSCustomCalendarController(Context context, Locale locale, TimeZone timeZone, AttributeSet attrs, OverScroller overScroller, Paint dayPaint,
-                                       Rect textSizeRect, int currentDayBackgroundColor, int currentSelectedDayBackgroundColor, int calendarTextColor,
-                                       VelocityTracker velocityTracker) {
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+
+    ITSCustomCalendarController(Context context, Locale locale, TimeZone timeZone, AttributeSet attrs, OverScroller overScroller, Paint dayPaint,
+                                Rect textSizeRect, int currentDayBackgroundColor, int currentSelectedDayBackgroundColor, int calendarTextColor,
+                                VelocityTracker velocityTracker) {
         this.overScroller = overScroller;
         this.locale = locale;
         this.timeZone = timeZone;
@@ -131,6 +157,8 @@ class ITSCustomCalendarController {
                 currentDateTextColor = typedArray.getColor(R.styleable.ITSCustomCalendarView_currentDateTextColor, currentDateTextColor);
                 currentDateCircleIndicatorColor = typedArray.getColor(R.styleable.ITSCustomCalendarView_currentDateCircleIndicatorColor, currentDateCircleIndicatorColor);
 
+                colorForWeekendDays = typedArray.getColor(R.styleable.ITSCustomCalendarView_calendarWeekendDaysColor, colorForWeekendDays);
+
                 textSize = typedArray.getDimensionPixelSize(R.styleable.ITSCustomCalendarView_calendarTextSize,
                         (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSize, context.getResources().getDisplayMetrics()));
                 targetHeight = typedArray.getDimensionPixelSize(R.styleable.ITSCustomCalendarView_targetHeight,
@@ -142,6 +170,14 @@ class ITSCustomCalendarController {
     }
 
     private void init(Context context) {
+        colorForWeekendDays = calendarDatesTextColor;
+        shadowPaint = new Paint();
+        parallaxPaint = new Paint();
+
+        densityParallax1 = Calculations.getPxFromDp(context, 1);
+        densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
+        densityParallax2 = Calculations.getPxFromDp(context, 2);
+
         currentCalendar = Calendar.getInstance(timeZone, locale);
         todayCalendar = Calendar.getInstance(timeZone, locale);
         calendarWithFirstDayOfMonth = Calendar.getInstance(timeZone, locale);
@@ -276,6 +312,7 @@ class ITSCustomCalendarController {
 
     private void drawMonth(Canvas canvas, Calendar monthForDrawCal, int offset) {
         int firstDayOfMonth = getDayOfWeek(monthForDrawCal);
+        boolean isWeekend = false;
 
         boolean isSameMonthAsToday = monthForDrawCal.get(Calendar.MONTH) == todayCalendar.get(Calendar.MONTH);
         boolean isSameYearAsToday = monthForDrawCal.get(Calendar.YEAR) == todayCalendar.get(Calendar.YEAR);
@@ -294,10 +331,16 @@ class ITSCustomCalendarController {
                 } else {
                     columnDirection++;
                 }
+
                 dayRow = 0;
 //                if (dayColumn <= 6) {
                 dayColumn++;
 //                }
+
+                if (dayColumn == 5 || dayColumn == 6)
+                    isWeekend = true;
+                else
+                    isWeekend = false;
             }
             if (dayColumn == dayColumnNames.length) {
                 break;
@@ -305,6 +348,17 @@ class ITSCustomCalendarController {
 
             float xPosition = widthPerDay * dayColumn + paddingWidth + paddingLeft + accumulatedScrollOffset.x + offset - paddingRight;
             float yPosition = heightPerDay * dayRow + paddingHeight;
+
+            if (dayRow > 0 && dayRow < 7) {
+                if (shouldDisplayDividerForRows) {
+                    dayPaint.setColor(rowsDividerColor);
+                    canvas.drawRect(new RectF(0, yPosition + 20, width, yPosition + 20 + rowsDividerHeight), dayPaint);
+                    dayPaint.setColor(calendarWeekDaysTextColor);
+                }
+            }
+
+//            if (dayRow == 2 && dayColumn == 1)
+//            canvas.drawRect(new RectF(widthPerDay * 6, heightPerDay, widthPerDay * 7, heightPerDay * 2), dayPaint);
 
             if (dayRow == 0) {
                 if (shouldDrawDaysHeader) {
@@ -315,14 +369,74 @@ class ITSCustomCalendarController {
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
                     dayPaint.setStyle(Paint.Style.FILL);
+
+                    if (show3DEffect) {
+                        if (shadowPaint == null) {
+                            shadowPaint = new Paint();
+                        }
+
+                        shadowPaint.setTextAlign(Paint.Align.CENTER);
+                        shadowPaint.setStyle(Paint.Style.STROKE);
+                        shadowPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                        if (typeface != null) {
+                            shadowPaint.setTypeface(typeface);
+                        } else {
+                            shadowPaint.setTypeface(Typeface.SANS_SERIF);
+                        }
+                        shadowPaint.setTextSize(textSize);
+                        shadowPaint.setColor(DKGRAY);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + 2, yPosition - 2, shadowPaint);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + 3, yPosition - 3, shadowPaint);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + 4, yPosition - 4, shadowPaint);
+                        shadowPaint.setTypeface(Typeface.DEFAULT);
+                    }
+
+                    if (showParallaxEffect) {
+                        if (parallaxPaint == null) {
+                            parallaxPaint = new Paint();
+                        }
+
+                        parallaxPaint.setTextAlign(Paint.Align.CENTER);
+                        parallaxPaint.setStyle(Paint.Style.STROKE);
+                        parallaxPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                        parallaxPaint.setAntiAlias(true);
+                        if (typeface != null) {
+                            parallaxPaint.setTypeface(typeface);
+                        } else {
+                            parallaxPaint.setTypeface(Typeface.SANS_SERIF);
+                        }
+                        parallaxPaint.setTextSize(textSize);
+
+//                        if (isWeekend) {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(colorForWeekendDays);
+//                            }
+//                        } else {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(calendarDatesTextColor);
+//                            }
+//                        }
+
+                        parallaxPaint.setColor(DKGRAY);
+
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + (-sensor_x), yPosition + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + densityParallax1 + (-sensor_x), yPosition + densityParallax1 + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + densityParallax15 + (-sensor_x), yPosition + densityParallax15 + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(dayColumnNames[columnDirection]), xPosition + densityParallax2 + (-sensor_x), yPosition + densityParallax2 + sensor_y, parallaxPaint);
+                        parallaxPaint.setTypeface(Typeface.DEFAULT);
+                        parallaxPaint.setColor(calendarDatesTextColor);
+                    }
+
                     canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight, dayPaint);
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
 
                     if (shouldDrawLineDividerUnderWeekDaysHeader) {
                         dayPaint.setColor(lineDividerUnderWeekDaysHeaderColor);
-//                        canvas.drawLine(0, paddingHeight + 20 + lineDividerUnderWeekDaysHeaderHeight, width, paddingHeight + 20 + lineDividerUnderWeekDaysHeaderHeight, dayPaint);
                         canvas.drawRect(new RectF(0, paddingHeight + 20, width, paddingHeight + 20 + lineDividerUnderWeekDaysHeaderHeight), dayPaint);
-//                        shouldDrawLineDividerUnderWeekDaysHeader = false;
                         dayPaint.setColor(calendarWeekDaysTextColor); //Reset day paint
                     }
                 }
@@ -331,18 +445,89 @@ class ITSCustomCalendarController {
                 if (currentCalendar.get(Calendar.DAY_OF_MONTH) == day && isSameMonthAsCurrentCalendar) {
                     //obelezi ovaj datum
                 } else if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+                    //todaysDate
 
                 }
+
                 if (day <= 0) {
 //                    previous month days
                     if (displayOtherMonthDays) {
                         dayPaint.setStyle(Paint.Style.FILL);
-//                        dayPaint.setColor(otherMonthDaysColor);
-                        dayPaint.setColor(Color.GRAY);
+                        if (shouldPaintWeekendDaysForOtherMonths) {
+                            if (isWeekend)
+                                dayPaint.setColor(colorForWeekendDays);
+                            else
+                                dayPaint.setColor(otherMonthDaysColor);
+                        } else {
+                            dayPaint.setColor(otherMonthDaysColor);
+                        }
                         if (typeface != null) {
                             dayPaint.setTypeface(typeface);
                         } else {
                             dayPaint.setTypeface(Typeface.DEFAULT);
+                        }
+
+                        if (show3DEffect) {
+                            if (shadowPaint == null) {
+                                shadowPaint = new Paint();
+                            }
+
+                            shadowPaint.setTextAlign(Paint.Align.CENTER);
+                            shadowPaint.setStyle(Paint.Style.STROKE);
+                            shadowPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                            if (typeface != null) {
+                                shadowPaint.setTypeface(typeface);
+                            } else {
+                                shadowPaint.setTypeface(Typeface.SANS_SERIF);
+                            }
+                            shadowPaint.setTextSize(textSize);
+                            shadowPaint.setColor(DKGRAY);
+                            shadowPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                            canvas.drawText(String.valueOf(String.valueOf(maxPreviousMonthDay + day)), xPosition + 2, yPosition - 2, shadowPaint);
+                            canvas.drawText(String.valueOf(String.valueOf(maxPreviousMonthDay + day)), xPosition + 3, yPosition - 3, shadowPaint);
+                            canvas.drawText(String.valueOf(String.valueOf(maxPreviousMonthDay + day)), xPosition + 4, yPosition - 4, shadowPaint);
+                            shadowPaint.setTypeface(Typeface.DEFAULT);
+                        }
+
+                        if (showParallaxEffect) {
+                            if (parallaxPaint == null) {
+                                parallaxPaint = new Paint();
+                            }
+
+                            parallaxPaint.setTextAlign(Paint.Align.CENTER);
+                            parallaxPaint.setStyle(Paint.Style.STROKE);
+                            parallaxPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                            parallaxPaint.setAntiAlias(true);
+                            if (typeface != null) {
+                                parallaxPaint.setTypeface(typeface);
+                            } else {
+                                parallaxPaint.setTypeface(Typeface.SANS_SERIF);
+                            }
+                            parallaxPaint.setTextSize(textSize);
+
+//                        if (isWeekend) {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(colorForWeekendDays);
+//                            }
+//                        } else {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(calendarDatesTextColor);
+//                            }
+//                        }
+
+                            parallaxPaint.setColor(DKGRAY);
+
+                            parallaxPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                            canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition + (-sensor_x), yPosition + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition + densityParallax1 + (-sensor_x), yPosition + densityParallax1 + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition + densityParallax15 + (-sensor_x), yPosition + densityParallax15 + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition + densityParallax2 + (-sensor_x), yPosition + densityParallax2 + sensor_y, parallaxPaint);
+                            parallaxPaint.setTypeface(Typeface.DEFAULT);
+                            parallaxPaint.setColor(calendarDatesTextColor);
                         }
                         canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
                         dayPaint.setTypeface(Typeface.DEFAULT);
@@ -350,34 +535,204 @@ class ITSCustomCalendarController {
                 } else if (day > maxMonthDay) {
 //                    next month days
                     if (displayOtherMonthDays) {
+//                        if (!(dayRow > lastDayRow)) {
                         dayPaint.setStyle(Paint.Style.FILL);
-//                        dayPaint.setColor(otherMonthDaysColor);
-                        dayPaint.setColor(Color.GRAY);
+                        if (shouldPaintWeekendDaysForOtherMonths) {
+                            if (isWeekend)
+                                dayPaint.setColor(colorForWeekendDays);
+                            else
+                                dayPaint.setColor(otherMonthDaysColor);
+                        } else {
+                            dayPaint.setColor(otherMonthDaysColor);
+                        }
                         if (typeface != null) {
                             dayPaint.setTypeface(typeface);
                         } else {
                             dayPaint.setTypeface(Typeface.DEFAULT);
                         }
+
+                        if (show3DEffect) {
+                            if (shadowPaint == null) {
+                                shadowPaint = new Paint();
+                            }
+
+                            shadowPaint.setTextAlign(Paint.Align.CENTER);
+                            shadowPaint.setStyle(Paint.Style.STROKE);
+                            shadowPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                            if (typeface != null) {
+                                shadowPaint.setTypeface(typeface);
+                            } else {
+                                shadowPaint.setTypeface(Typeface.SANS_SERIF);
+                            }
+                            shadowPaint.setTextSize(textSize);
+                            shadowPaint.setColor(DKGRAY);
+                            shadowPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 2, yPosition - 2, shadowPaint);
+                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 3, yPosition - 3, shadowPaint);
+                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 4, yPosition - 4, shadowPaint);
+                            shadowPaint.setTypeface(Typeface.DEFAULT);
+                        }
+
+                        if (showParallaxEffect) {
+                            if (parallaxPaint == null) {
+                                parallaxPaint = new Paint();
+                            }
+
+                            parallaxPaint.setTextAlign(Paint.Align.CENTER);
+                            parallaxPaint.setStyle(Paint.Style.STROKE);
+                            parallaxPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                            parallaxPaint.setAntiAlias(true);
+                            if (typeface != null) {
+                                parallaxPaint.setTypeface(typeface);
+                            } else {
+                                parallaxPaint.setTypeface(Typeface.SANS_SERIF);
+                            }
+                            parallaxPaint.setTextSize(textSize);
+
+//                        if (isWeekend) {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(colorForWeekendDays);
+//                            }
+//                        } else {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(calendarDatesTextColor);
+//                            }
+//                        }
+
+                            parallaxPaint.setColor(DKGRAY);
+
+                            parallaxPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + (-sensor_x), yPosition + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + densityParallax1 + (-sensor_x), yPosition + densityParallax1 + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + densityParallax15 + (-sensor_x), yPosition + densityParallax15 + sensor_y, parallaxPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + densityParallax2 + (-sensor_x), yPosition + densityParallax2 + sensor_y, parallaxPaint);
+                            parallaxPaint.setTypeface(Typeface.DEFAULT);
+                            parallaxPaint.setColor(calendarDatesTextColor);
+                        }
                         canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
                         dayPaint.setTypeface(Typeface.DEFAULT);
+//                        }
                     }
                 } else {
+                    //Current month
+
                     dayPaint.setStyle(Paint.Style.FILL);
-                    if (dayRow == 2) //testing line
-                        dayPaint.setColor(Color.WHITE);
-                    else
-                        dayPaint.setColor(calendarDatesTextColor);
+
+                    if (shadowPaint == null) {
+                        shadowPaint = new Paint();
+                    }
+
+                    if (todayDayOfMonth == day && isSameMonthAsToday && isSameMonthAsToday) {
+                        shadowPaint.setColor(currentDayIndicatorColor);
+                        //draws indicator shape for current day
+                        if (shouldShowIndicatorForCurrentDay)
+                            drawIndicatorShape(canvas, widthPerDay / 2, xPosition, yPosition, shadowPaint);
+                        shadowPaint.setColor(DKGRAY);
+                    }
+
+                    if (isWeekend) {
+                        if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+                            dayPaint.setColor(currentDateTextColor);
+                        } else {
+                            dayPaint.setColor(colorForWeekendDays);
+                        }
+                    } else {
+                        if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+                            dayPaint.setColor(currentDateTextColor);
+                        } else {
+                            dayPaint.setColor(calendarDatesTextColor);
+                        }
+                    }
+
                     if (typeface != null) {
                         dayPaint.setTypeface(typeface);
                     } else {
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
+                    if (show3DEffect) {
+//                        if (shadowPaint == null) {
+//                            shadowPaint = new Paint();
+//                        }
+
+                        shadowPaint.setTextAlign(Paint.Align.CENTER);
+                        shadowPaint.setStyle(Paint.Style.STROKE);
+                        shadowPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                        if (typeface != null) {
+                            shadowPaint.setTypeface(typeface);
+                        } else {
+                            shadowPaint.setTypeface(Typeface.SANS_SERIF);
+                        }
+                        shadowPaint.setTextSize(textSize);
+                        shadowPaint.setColor(DKGRAY);
+                        shadowPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                        canvas.drawText(String.valueOf(day), xPosition + 2, yPosition - 2, shadowPaint);
+                        canvas.drawText(String.valueOf(day), xPosition + 3, yPosition - 3, shadowPaint);
+                        canvas.drawText(String.valueOf(day), xPosition + 4, yPosition - 4, shadowPaint);
+                        shadowPaint.setTypeface(Typeface.DEFAULT);
+                    }
+
+                    if (showParallaxEffect) {
+                        if (parallaxPaint == null) {
+                            parallaxPaint = new Paint();
+                        }
+
+                        parallaxPaint.setTextAlign(Paint.Align.CENTER);
+                        parallaxPaint.setStyle(Paint.Style.STROKE);
+                        parallaxPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+                        parallaxPaint.setAntiAlias(true);
+                        if (typeface != null) {
+                            parallaxPaint.setTypeface(typeface);
+                        } else {
+                            parallaxPaint.setTypeface(Typeface.SANS_SERIF);
+                        }
+                        parallaxPaint.setTextSize(textSize);
+
+//                        if (isWeekend) {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(colorForWeekendDays);
+//                            }
+//                        } else {
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                                parallaxPaint.setColor(currentDateTextColor);
+//                            } else {
+//                                parallaxPaint.setColor(calendarDatesTextColor);
+//                            }
+//                        }
+
+                        parallaxPaint.setColor(DKGRAY);
+
+                        parallaxPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+                        canvas.drawText(String.valueOf(day), xPosition + (-sensor_x), yPosition + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(day), xPosition + densityParallax1 + (-sensor_x), yPosition + densityParallax1 + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(day), xPosition + densityParallax15 + (-sensor_x), yPosition + densityParallax15 + sensor_y, parallaxPaint);
+                        canvas.drawText(String.valueOf(day), xPosition + densityParallax2 + (-sensor_x), yPosition + densityParallax2 + sensor_y, parallaxPaint);
+                        parallaxPaint.setTypeface(Typeface.DEFAULT);
+                        parallaxPaint.setColor(calendarDatesTextColor);
+                    }
                     canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
                 }
             }
-
+            canvas.save();
         }
+        canvas.restore();
+    }
+
+    private void drawIndicatorShape(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
+        switch (currentDayIndicatorShape) {
+            case CIRCLE:
+                drawCircleIndicator(canvas, circleRadius, cx, cy, paint);
+        }
+    }
+
+    private void drawCircleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
+        canvas.drawCircle(cx, cy, circleRadius, paint);
     }
 
     private int computeVelocity() {
@@ -394,11 +749,11 @@ class ITSCustomCalendarController {
     }
 
     void onMeasure(int width, int height, int paddingRight, int paddingLeft) {
-        widthPerDay = (width) / DAYS_IN_WEEK;
-        heightPerDay = targetHeight > 0 ? targetHeight / 7 : height / 7;
-        this.width = width;
-        this.distanceThresholdForAutoScroll = (int) (width * 0.50);
-        this.height = height;
+        widthPerDay = (width) / DAYS_IN_WEEK; //91
+        heightPerDay = targetHeight > 0 ? targetHeight / 7 : height / 7; //1282 / 7 (targetHeight doesn't defined)
+        this.width = width; //640
+        this.distanceThresholdForAutoScroll = (int) (width * 0.50); //320
+        this.height = height; //1124
         this.paddingRight = paddingRight;
         this.paddingLeft = paddingLeft;
 
@@ -528,7 +883,7 @@ class ITSCustomCalendarController {
     }
 
     private void performScroll() {
-        int targetScroll = (monthsScrolledSoFar ) * width;
+        int targetScroll = (monthsScrolledSoFar) * width;
         float remainingScrollAfterFingerLifted = targetScroll - accumulatedScrollOffset.x;
 //        overScroller.startScroll((int) accumulatedScrollOffset.x, 0, (int) (remainingScrollAfterFingerLifted), 0,
 //                (int) (Math.abs((int) (remainingScrollAfterFingerLifted)) / (float) width * ANIMATION_SCREEN_SET_DURATION_MILLIS));
@@ -542,7 +897,7 @@ class ITSCustomCalendarController {
         }
     }
 
-    Date getFirstDayOfCurrentMonth() {
+    private Date getFirstDayOfCurrentMonth() {
         Calendar calendar = Calendar.getInstance(timeZone, locale);
         calendar.setTime(currentDate);
         calendar.add(Calendar.MONTH, monthsScrolledSoFar());
@@ -557,7 +912,13 @@ class ITSCustomCalendarController {
     }
 
     void setTargetHeight(int targetHeight) {
-        this.targetHeight = targetHeight;
+//        this.targetHeight = targetHeight;
+
+        try {
+            this.targetHeight = (int) Calculations.getPxFromDp(context, targetHeight);
+        } catch (Exception e) {
+            throw new ClassCastException(e.getMessage());
+        }
     }
 
     int getTargetHeight() {
@@ -602,5 +963,172 @@ class ITSCustomCalendarController {
 
     void setListener(ITSCustomCalendarView.ITSCustomCalendarViewListener callback) {
         this.listener = callback;
+    }
+
+    void setCalendarDatesTextColor(int calendarDatesTextColor) {
+        this.calendarDatesTextColor = calendarDatesTextColor;
+    }
+
+    void setCalendarWeekDaysTextColor(int calendarWeekDaysTextColor) {
+        this.calendarWeekDaysTextColor = calendarWeekDaysTextColor;
+    }
+
+
+    void setSelectedDateTextColor(int selectedDateTextColor) {
+        this.selectedDateTextColor = selectedDateTextColor;
+    }
+
+    void setCurrentDateTextColor(int currentDateTextColor) {
+        this.currentDateTextColor = currentDateTextColor;
+    }
+
+    void setCurrentDate(Date date) {
+        distanceX = 0;
+        monthsScrolledSoFar = 0;
+        accumulatedScrollOffset.x = 0;
+        overScroller.startScroll(0, 0, 0, 0);
+        currentDate = new Date(date.getTime());
+        currentCalendar.setTime(currentDate);
+        todayCalendar = Calendar.getInstance();
+        setCalendarToMidnight(currentCalendar);
+    }
+
+    String getCurrentMonthName() {
+        return getMonthName(currentCalendar);
+    }
+
+    String getMonthNameForSelectedDate(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return getMonthName(calendar);
+    }
+
+    private String getMonthName(Calendar calendar) {
+        String month = "Unknown";
+        DateFormatSymbols dateFormatSymbols = new DateFormatSymbols();
+        String[] months;
+        if (useThreeLetterAbbreviation)
+            months = dateFormatSymbols.getShortMonths();
+        else
+            months = dateFormatSymbols.getMonths();
+
+        int monthNum = calendar.get(Calendar.MONTH);
+        if (monthNum >= 0 && monthNum <= 11) {
+            month = months[monthNum];
+        }
+        return month;
+    }
+
+
+    void setOtherMonthDaysColor(int otherMonthDaysColor) {
+        this.otherMonthDaysColor = otherMonthDaysColor;
+    }
+
+    String getYearStringForCurrentMonth() {
+        return String.valueOf(currentCalendar.get(Calendar.YEAR));
+    }
+
+    String getYearStringForSelectedDate(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return String.valueOf(calendar.get(Calendar.YEAR));
+    }
+
+    private void scrollNext() {
+        monthsScrolledSoFar = monthsScrolledSoFar - 1;
+        accumulatedScrollOffset.x = monthsScrolledSoFar * width;
+        if (shouldSelectFirstDayOfMonthOnScroll) {
+            setCalendarToFirstDayOfMonth(calendarWithFirstDayOfMonth, currentCalendar.getTime(), 0, 1);
+            setCurrentDate(calendarWithFirstDayOfMonth.getTime());
+        }
+        performMonthScrollCallback();
+    }
+
+    private void scrollPrevious() {
+        monthsScrolledSoFar = monthsScrolledSoFar + 1;
+        accumulatedScrollOffset.x = monthsScrolledSoFar * width;
+        if (shouldSelectFirstDayOfMonthOnScroll) {
+            setCalendarToFirstDayOfMonth(calendarWithFirstDayOfMonth, currentCalendar.getTime(), 0, -1);
+            setCurrentDate(calendarWithFirstDayOfMonth.getTime());
+        }
+        performMonthScrollCallback();
+    }
+
+    void scrollToRight() {
+        if (isRtl)
+            scrollPrevious();
+        else
+            scrollNext();
+    }
+
+    void scrollToLeft() {
+        if (isRtl)
+            scrollNext();
+        else
+            scrollPrevious();
+    }
+
+    void setShouldSelectFirstDayOfMonthOnScroll(boolean shouldSelectFirstDayOfMonthOnScroll) {
+        this.shouldSelectFirstDayOfMonthOnScroll = shouldSelectFirstDayOfMonthOnScroll;
+    }
+
+    void setColorForWeekendDays(int colorForWeekendDays) {
+        this.colorForWeekendDays = colorForWeekendDays;
+    }
+
+    void shouldPaintWeekendDaysForOtherMonths(boolean shouldPaintWeekendDaysForOtherMonths) {
+        this.shouldPaintWeekendDaysForOtherMonths = shouldPaintWeekendDaysForOtherMonths;
+    }
+
+    void shouldDisplayDividerForRows(boolean shouldDisplayDividerForRows) {
+        this.shouldDisplayDividerForRows = shouldDisplayDividerForRows;
+    }
+
+    void setRowsDividerColor(int rowsDividerColor) {
+        this.rowsDividerColor = rowsDividerColor;
+    }
+
+    void setRowsDividerHeight(int rowsDividerHeightInDp) {
+        this.rowsDividerHeight = Calculations.getPxFromDp(context, rowsDividerHeightInDp);
+    }
+
+    void show3DEffect(boolean show3DEffect) {
+        this.show3DEffect = show3DEffect;
+    }
+
+    void onSensorEvent(SensorEvent sensorEvent) {
+        sensor_x = sensorEvent.values[0];
+        sensor_y = sensorEvent.values[1];
+//        sensor_z = sensor_z - sensorEvent.values[2];
+
+        System.out.println("test");
+    }
+
+    void showParallaxEffect(boolean showParallaxEffect) {
+        this.showParallaxEffect = showParallaxEffect;
+    }
+
+    void setSelectedDateIndicatorStyle(int selectedDateIndicatorStyle) {
+
+    }
+
+    void setCurrentDayIndicatorStyle(int currentDayIndicatorStyle) {
+        this.currentDayIndicatorStyle = currentDayIndicatorStyle;
+    }
+
+    void setSelectedDateIndicatorShape(IndicatorShapes indicatorShape) {
+
+    }
+
+    void setCurrentDayIndicatorShape(IndicatorShapes indicatorShape) {
+        this.currentDayIndicatorShape = indicatorShape;
+    }
+
+    void shouldShowIndicatorForCurrentDay(boolean shouldShowIndicatorForCurrentDay) {
+        this.shouldShowIndicatorForCurrentDay = shouldShowIndicatorForCurrentDay;
+    }
+
+    void setCurrentDayIndicatorColor(int currentDayIndicatorColor) {
+        this.currentDayIndicatorColor = currentDayIndicatorColor;
     }
 }
