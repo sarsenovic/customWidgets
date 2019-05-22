@@ -199,8 +199,10 @@ class ITSCustomCalendarController {
         dayPaint.setTextSize(textSize);
         dayPaint.setColor(calendarDatesTextColor);
         dayPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
-        textHeight = textSizeRect.height() * 3;
-        textWidth = textSizeRect.width() * 2;
+//        textHeight = textSizeRect.height() * 3;
+//        textWidth = textSizeRect.width() * 2;
+        textHeight = textSizeRect.height();
+        textWidth = textSizeRect.width();
 
         todayCalendar.setTime(new Date());
         currentCalendar.setTime(currentDate);
@@ -567,9 +569,9 @@ class ITSCustomCalendarController {
                             shadowPaint.setTextSize(textSize);
                             shadowPaint.setColor(DKGRAY);
                             shadowPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
-                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 2, yPosition - 2, shadowPaint);
-                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 3, yPosition - 3, shadowPaint);
-                            canvas.drawText(String.valueOf(String.valueOf(day - maxMonthDay)), xPosition + 4, yPosition - 4, shadowPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + 2, yPosition - 2, shadowPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + 3, yPosition - 3, shadowPaint);
+                            canvas.drawText(String.valueOf(day - maxMonthDay), xPosition + 4, yPosition - 4, shadowPaint);
                             shadowPaint.setTypeface(Typeface.DEFAULT);
                         }
 
@@ -629,8 +631,11 @@ class ITSCustomCalendarController {
                     if (todayDayOfMonth == day && isSameMonthAsToday && isSameMonthAsToday) {
                         shadowPaint.setColor(currentDayIndicatorColor);
                         //draws indicator shape for current day
-                        if (shouldShowIndicatorForCurrentDay)
+                        if (shouldShowIndicatorForCurrentDay) {
                             drawIndicatorShape(canvas, widthPerDay / 2, xPosition, yPosition, shadowPaint);
+                            canvas.drawRect(new RectF(widthPerDay * (dayColumn + 1), heightPerDay * dayRow, widthPerDay * (dayColumn + 2), heightPerDay * (dayRow + 1)), dayPaint);
+                            canvas.drawLine(widthPerDay * (dayColumn + 1), heightPerDay * dayRow, widthPerDay * (dayColumn + 2), heightPerDay * (dayRow + 1), dayPaint);
+                        }
                         shadowPaint.setColor(DKGRAY);
                     }
 
