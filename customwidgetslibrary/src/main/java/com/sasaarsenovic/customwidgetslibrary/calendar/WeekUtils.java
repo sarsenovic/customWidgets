@@ -1,4 +1,4 @@
-package com.example.customwidgetslibrary.calendar;
+package com.sasaarsenovic.customwidgetslibrary.calendar;
 
 import java.text.DateFormatSymbols;
 import java.util.Arrays;

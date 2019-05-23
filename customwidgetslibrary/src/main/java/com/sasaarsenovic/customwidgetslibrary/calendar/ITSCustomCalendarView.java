@@ -1,4 +1,4 @@
-package com.example.customwidgetslibrary.calendar;
+package com.sasaarsenovic.customwidgetslibrary.calendar;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -30,8 +30,6 @@ public class ITSCustomCalendarView extends View {
         void onMonthScroll(Date firstDayOfNewMonth);
     }
 
-    //190 - 286
-
     private final GestureDetector.SimpleOnGestureListener gestureListener = new GestureDetector.SimpleOnGestureListener() {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
@@ -47,7 +45,7 @@ public class ITSCustomCalendarView extends View {
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-//            return super.onScroll(e1, e2, distanceX, distanceY);
+            /*return super.onScroll(e1, e2, distanceX, distanceY);*/
             if (horizontalScrollEnabled) {
                 if (Math.abs(distanceX) > 0) {
                     getParent().requestDisallowInterceptTouchEvent(true); //when child doesn't want this parent and its ancestors to intercept touch events with (Android docs)
@@ -62,13 +60,13 @@ public class ITSCustomCalendarView extends View {
 
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-//            return super.onFling(e1, e2, velocityX, velocityY);
+            /*return super.onFling(e1, e2, velocityX, velocityY);*/
             return true;
         }
 
         @Override
         public boolean onDown(MotionEvent e) {
-//            return super.onDown(e);
+            /*return super.onDown(e);*/
             return true;
         }
     };
@@ -140,17 +138,15 @@ public class ITSCustomCalendarView extends View {
     Android docs:
     Check if this view can be scrolled vertically in a certain direction.
     */
-//    @Override
-//    public boolean canScrollVertically(int direction) {
-//        if (this.getVisibility() == GONE) {
-//            return false;
-//        }
-//        return false;
-//    }
+    /*@Override
+    public boolean canScrollVertically(int direction) {
+        if (this.getVisibility() == GONE) {
+            return false;
+        }
+        return false;
+    }*/
 
-    /*
-        Use a custom locale for calendar. View is going to reinitialise;
-        */
+    //Use a custom locale for calendar. View is going to reinitialise
     public void setLocale(TimeZone timeZone, Locale locale) {
         itsCustomCalendarController.setLocale(timeZone, locale);
         invalidate();
@@ -179,10 +175,10 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-    /*
-    ********************
-    <Colors section>
-    */
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Colors section>
 
     //Background color type
     public void setCalendarBackgroundColor(int backgroundColor) {
@@ -197,10 +193,12 @@ public class ITSCustomCalendarView extends View {
     }
 
     //Background color type
-//    public void setSelectedDayBackgroundColor(int selectedDayBackgroundColor) {
-//        itsCustomCalendarController.setSelectedDayBackgroundColor(selectedDayBackgroundColor);
-//        invalidate();
-//    }
+    /*
+    public void setSelectedDayBackgroundColor(int selectedDayBackgroundColor) {
+        itsCustomCalendarController.setSelectedDayBackgroundColor(selectedDayBackgroundColor);
+        invalidate();
+    }
+    */
 
     //Text color type
     public void setCalendarDatesTextColor(int calendarDatesTextColor) {
@@ -234,39 +232,45 @@ public class ITSCustomCalendarView extends View {
         itsCustomCalendarController.shouldPaintWeekendDaysForOtherMonths(shouldPaintWeekendDaysForOtherMonths);
     }
 
-    //
-//    //Indicator color type
-//    public void setSelectedDateCircleIndicatorColor(int selectedDateCircleIndicatorColor) {
-//        itsCustomCalendarController.setSelectedDateCircleIndicatorColor(selectedDateCircleIndicatorColor);
-//    }
-//
-//    //Indicator color type
-//    public void setCurrentDateCircleIndicatorColor(int currentDateCircleIndicatorColor) {
-//        itsCustomCalendarController.setCurrentDateCircleIndicatorColor(currentDateCircleIndicatorColor);
-//    }
-//
-//    /*
-//    </Colors section>
-//    ********************
-//    */
-//
-//    public int getDayHeight() {
-//        return itsCustomCalendarController.getDayHeight();
-//    }
-//
+    //Indicator color type
+    /*
+    public void setSelectedDateCircleIndicatorColor(int selectedDateCircleIndicatorColor) {
+        itsCustomCalendarController.setSelectedDateCircleIndicatorColor(selectedDateCircleIndicatorColor);
+    }
+    */
+
+    //Indicator color type
+    /*
+    public void setCurrentDateCircleIndicatorColor(int currentDateCircleIndicatorColor) {
+        itsCustomCalendarController.setCurrentDateCircleIndicatorColor(currentDateCircleIndicatorColor);
+    }
+    */
+
+    //</Colors section>
+    //--------------------------------------------------------------------------------
+
+    /*
+    public int getDayHeight() {
+        return itsCustomCalendarController.getDayHeight();
+    }
+    */
+
     public void setListener(ITSCustomCalendarViewListener callback) {
         itsCustomCalendarController.setListener(callback);
     }
 
-    //
-//    public Date getFirstDayOfCurrentMonth() {
-//        return itsCustomCalendarController.getFirstDayOfCurrentMonth();
-//    }
-//
-//    public void setShouldDrawIndicatorsBelowSelectedDays(boolean shouldDrawIndicatorsBelowSelectedDays) {
-//        itsCustomCalendarController.setShouldDrawIndicatorsBelowSelectedDays(shouldDrawIndicatorsBelowSelectedDays);
-//    }
-//
+    /*
+    public Date getFirstDayOfCurrentMonth() {
+        return itsCustomCalendarController.getFirstDayOfCurrentMonth();
+    }
+    */
+
+    /*
+    public void setShouldDrawIndicatorsBelowSelectedDays(boolean shouldDrawIndicatorsBelowSelectedDays) {
+        itsCustomCalendarController.setShouldDrawIndicatorsBelowSelectedDays(shouldDrawIndicatorsBelowSelectedDays);
+    }
+    */
+
     public void setShouldDrawDaysHeader(boolean shouldDrawDaysHeader) {
         itsCustomCalendarController.setShouldDrawDaysHeader(shouldDrawDaysHeader);
     }
@@ -292,11 +296,12 @@ public class ITSCustomCalendarView extends View {
         return itsCustomCalendarController.getYearStringForSelectedDate(date);
     }
 
-    //
-//    public int getWeekNumberForCurrentMonth() {
-//        return itsCustomCalendarController.getWeekNumberForCurrentMonth();
-//    }
-//
+    /*
+    public int getWeekNumberForCurrentMonth() {
+        return itsCustomCalendarController.getWeekNumberForCurrentMonth();
+    }
+    */
+
     public void setRtl(boolean isRtl) {
         itsCustomCalendarController.setRtl(isRtl);
     }
@@ -310,19 +315,86 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-    //STROKE, FILL
+
+    //STROKE, FILL, STROKE_AND_FILL
     public void setSelectedDateIndicatorStyle(final int selectedDateIndicatorStyle) {
         itsCustomCalendarController.setSelectedDateIndicatorStyle(selectedDateIndicatorStyle);
         invalidate();
     }
 
-    /*Current day indicator params*/
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Custom days color params>
+
+    //ubacivanje datuma ili opsega datuma za iscrtavanje "po narudzbini"
+    public void setCustomDaysForCustomDrawing(Date[] dates) {
+        itsCustomCalendarController.setCustomDaysForCustomDrawing(dates);
+        invalidate();
+    }
+
+    //STROKE, FILL, FILL_AND_STROKE
+    public void setCustomDaysPaintStyle(Paint.Style paintStyle) {
+        itsCustomCalendarController.setCustomDaysPaintStyle(paintStyle);
+        invalidate();
+    }
+
+    //postavljanje boje teksta za izabrane datume
+    public void setCustomDaysTextColor(int customDaysTextColor) {
+        itsCustomCalendarController.setCustomDaysTextColor(customDaysTextColor);
+    }
+
+    //</Custom day color params>
+    //--------------------------------------------------------------------------------
+
+
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Custom days indicator shape params>
+
+    //ubacivanje datuma ili opsega datuma za iscrtavanje oblika (obelezavanje tih datuma) "po narudzbini"
+    public void setCustomDaysForCustomDrawingShapes(Date[] dates) {
+        itsCustomCalendarController.setCustomDaysForCustomDrawingShapes(dates);
+        invalidate();
+    }
+
+    //izbor oblika koji ce se nalaziti iza postavljenih datuma
+    public void setCustomDaysIndicatorShape(IndicatorShapes indicatorShape) {
+        itsCustomCalendarController.setCustomDaysIndicatorShape(indicatorShape);
+        invalidate();
+    }
+
+    //STROKE, FILL, FILL_AND_STROKE
+    public void setCustomDaysIndicatorShapePaintStyle(Paint.Style customDayIndicatorShapePaintStyle) {
+        itsCustomCalendarController.setCustomDaysIndicatorShapePaintStyle(customDayIndicatorShapePaintStyle);
+        invalidate();
+    }
+
+    public void setCustomDayIndicatorShapeColor(int customDayIndicatorShapeColor) {
+        itsCustomCalendarController.setCustomDayIndicatorShapeColor(customDayIndicatorShapeColor);
+    }
+
+    public void shouldShowIndicatorShapeForCustomDay(boolean shouldShowIndicatorShapeForCustomDay) {
+        itsCustomCalendarController.shouldShowIndicatorShapeForCustomDay(shouldShowIndicatorShapeForCustomDay);
+    }
+
+    //</Custom day indicator shape params>
+    //--------------------------------------------------------------------------------
+
+
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Current day indicator shape params>
+
     public void setCurrentDayIndicatorShape(IndicatorShapes indicatorShape) {
         itsCustomCalendarController.setCurrentDayIndicatorShape(indicatorShape);
         invalidate();
     }
 
-    public void setCurrentDayIndicatorStyle(final int currentDayIndicatorStyle) {
+    /*STROKE, FILL, STROKE_AND_FILL*/
+    public void setCurrentDayIndicatorStyle(Paint.Style currentDayIndicatorStyle) {
         itsCustomCalendarController.setCurrentDayIndicatorStyle(currentDayIndicatorStyle);
         invalidate();
     }
@@ -334,17 +406,19 @@ public class ITSCustomCalendarView extends View {
     public void shouldShowIndicatorForCurrentDay(boolean shouldShowIndicatorForCurrentDay) {
         itsCustomCalendarController.shouldShowIndicatorForCurrentDay(shouldShowIndicatorForCurrentDay);
     }
-    /*</Current day indicator params>*/
+
+    //</Current day indicator shape params>
+    //--------------------------------------------------------------------------------
 
     public void setDisplayOtherMonthDays(boolean displayOtherMonthDays) {
         itsCustomCalendarController.setDisplayOtherMonthDays(displayOtherMonthDays);
         invalidate();
     }
 
-//    public void setEventIndicatorStyle(final int eventIndicatorStyle){
-//        itsCustomCalendarController.setEventIndicatorStyle(eventIndicatorStyle);
-//        invalidate();
-//    }
+    /*public void setEventIndicatorStyle(final int eventIndicatorStyle){
+        itsCustomCalendarController.setEventIndicatorStyle(eventIndicatorStyle);
+        invalidate();
+    }*/
 
     public void setTargetHeight(int targetHeightInDp) {
         itsCustomCalendarController.setTargetHeight(targetHeightInDp);
@@ -396,17 +470,14 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-    /*
-    Scrolls calendar to the right. Be carefull with RTL layouts (If RTL is true this scroll will show to the previous month.
-    */
+
+    //    Scrolls calendar to the right. Be carefull with RTL layouts (If RTL is true this scroll will show to the previous month.
     public void scrollToRight() {
         itsCustomCalendarController.scrollToRight();
         invalidate();
     }
 
-    /*
-    Scrolls calendar to the left. Be carefull with RTL layouts (If RTL is true this scroll will show to the next month.
-    */
+    //    Scrolls calendar to the left. Be carefull with RTL layouts (If RTL is true this scroll will show to the next month.
     public void scrollToLeft() {
         itsCustomCalendarController.scrollToLeft();
         invalidate();

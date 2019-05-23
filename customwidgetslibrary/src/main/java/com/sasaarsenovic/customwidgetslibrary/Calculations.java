@@ -1,4 +1,4 @@
-package com.example.customwidgetslibrary;
+package com.sasaarsenovic.customwidgetslibrary;
 
 import android.content.Context;
 import android.content.res.TypedArray;

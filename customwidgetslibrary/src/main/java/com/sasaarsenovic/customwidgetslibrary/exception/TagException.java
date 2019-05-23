@@ -1,4 +1,4 @@
-package com.example.customwidgetslibrary.exception;
+package com.sasaarsenovic.customwidgetslibrary.exception;
 
 public class TagException extends Exception {
     public TagException() {

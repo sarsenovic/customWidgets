@@ -55,11 +55,10 @@
         android:textColor="@color/white"
         android:textSize="20sp" />
 
-    <com.example.customwidgetslibrary.calendar.ITSCustomCalendarView
+    <com.sasaarsenovic.customwidgetslibrary.calendar.ITSCustomCalendarView
         android:id="@+id/its_calendar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
         app:calendarBackgroundColor="@color/purple_dark"
         app:calendarDatesTextColor="@color/purple_light"
         app:calendarWeekDaysTextColor="@color/sweet_green" />
