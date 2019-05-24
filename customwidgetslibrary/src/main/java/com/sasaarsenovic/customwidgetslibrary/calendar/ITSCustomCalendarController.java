@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import static android.graphics.Color.DKGRAY;
+import static android.view.View.LAYER_TYPE_SOFTWARE;
 
 class ITSCustomCalendarController {
     private static final int VELOCITY_UNIT_PIXELS_PER_SECOND = 1000;
@@ -105,6 +106,7 @@ class ITSCustomCalendarController {
     private IndicatorShapes currentDayIndicatorShape;
     private boolean shouldShowIndicatorForCurrentDay = false;
     private int currentDayIndicatorColor;
+    private boolean showGridView = false;
 
     private Date[] customDatesForCustomDrawing;
     private int customDaysTextColor;
@@ -379,14 +381,33 @@ class ITSCustomCalendarController {
                 break;
             }
 
+            //Reset text height
+            resetTextHeight(dayPaint, "31");
+
             float xPosition = widthPerDay * dayColumn + paddingWidth + paddingLeft + accumulatedScrollOffset.x + offset - paddingRight;
-            float yPosition = heightPerDay * dayRow + paddingHeight;
+            float yPosition = heightPerDay * dayRow + paddingHeight + textHeight / 2;
 
             if (dayRow > 0 && dayRow < 7) {
                 if (shouldDisplayDividerForRows) {
                     dayPaint.setColor(rowsDividerColor);
                     canvas.drawRect(new RectF(0, yPosition + 20, width, yPosition + 20 + rowsDividerHeight), dayPaint);
                     dayPaint.setColor(calendarWeekDaysTextColor);
+                }
+            }
+
+            //Show grid view arround days
+            if (showGridView) {
+                if (dayRow > 0) {
+                    if (dayColumn == 0 || dayColumn == 1 || dayColumn == 2 || dayColumn == 3 || dayColumn == 4 || dayColumn == 5 || dayColumn == 6) {
+                        dayPaint.setColor(calendarWeekDaysTextColor);
+                        if (typeface != null) {
+                            dayPaint.setTypeface(typeface);
+                        } else {
+                            dayPaint.setTypeface(Typeface.DEFAULT);
+                        }
+                        dayPaint.setStyle(Paint.Style.STROKE);
+                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), dayPaint);
+                    }
                 }
             }
 
@@ -408,12 +429,15 @@ class ITSCustomCalendarController {
                         drawParallaxShadowEffect(canvas, parallaxPaint, String.valueOf(dayColumnNames[columnDirection]), xPosition, yPosition);
                     }
 
-                    canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight, dayPaint);
+                    //Reset text height
+                    resetTextHeight(dayPaint, dayColumnNames[columnDirection]);
+
+                    canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight + textHeight / 2, dayPaint);
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
 
                     if (shouldDrawLineDividerUnderWeekDaysHeader) {
                         dayPaint.setColor(lineDividerUnderWeekDaysHeaderColor);
-                        canvas.drawRect(new RectF(0, paddingHeight + 20, width, paddingHeight + 20 + lineDividerUnderWeekDaysHeaderHeight), dayPaint);
+                        canvas.drawRect(new RectF(0, paddingHeight + 20 + textHeight / 2, width, paddingHeight + 20 + lineDividerUnderWeekDaysHeaderHeight + textHeight / 2), dayPaint);
                         dayPaint.setColor(calendarWeekDaysTextColor); //Reset day paint color
                     }
                 }
@@ -491,7 +515,6 @@ class ITSCustomCalendarController {
                         shadowPaint = new Paint();
                     }
 
-
                     if (shouldShowIndicatorForCurrentDay) {
                         if (todayDayOfMonth == day && isSameMonthAsToday && isSameMonthAsToday) {
                             //draws indicator shape for current day
@@ -499,18 +522,20 @@ class ITSCustomCalendarController {
                             shadowPaint.setTextAlign(Paint.Align.CENTER);
                             shadowPaint.setStyle(currentDayIndicatorStyle);
                             shadowPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+
+                            //Ovde mogu da stavljam text height zato sto znam da su datumi uvek brojevi a resetovan je na pocetku for petlje (ne moram da uzimam textHeight za shadowPaint)
                             switch (currentDayIndicatorShape) {
                                 case CIRCLE:
-                                    drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition, shadowPaint);
+                                    drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
                                     break;
                                 case CIRCLE_WITH_SHADOW:
-                                    drawCircleIndicatorWithShadow(canvas, widthPerDay, xPosition, yPosition, shadowPaint);
+                                    drawCircleIndicatorWithShadow(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
                                     break;
                                 case RECTANGLE:
                                     drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case RECTANGLE_WITH_SHADOW:
-                                    //drawRectangleIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
+                                    drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case SQUARE:
                                     //drawSquareIndicator(canvas, circleRadius, cx, cy, paint);
@@ -579,6 +604,11 @@ class ITSCustomCalendarController {
             canvas.save();
         }
         canvas.restore();
+    }
+
+    private void resetTextHeight(Paint paint, String text) {
+        paint.getTextBounds(text, 0, text.length(), textSizeRect);
+        textHeight = textSizeRect.height();
     }
 
     //Returns boolean if is weekend day row X column
@@ -679,18 +709,34 @@ class ITSCustomCalendarController {
 
     //Draws circle shape indicator on canvas
     private void drawCircleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        canvas.drawCircle(cx, cy - 10, circleRadius / 2, paint);
+        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
     }
 
     //Draws circle shape indicator with shadow on canvas
     private void drawCircleIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
-        canvas.drawCircle(cx, cy - 10, circleRadius / 2, paint);
+//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
+//        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
+//        paint.setColor(currentDayIndicatorColor);
+//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.15));
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - 5, paint);
+//        paint.setColor(currentDayIndicatorColor);
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - 10, paint);
+
+        for (float i = 10, j = 0.8f; i > 0; i--, j -= 0.1) {
+            paint.setColor(currentDayIndicatorColor);
+            paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), j));
+            if (i == 1)
+                paint.setColor(currentDayIndicatorColor);
+            canvas.drawCircle(cx, cy, (circleRadius / 2 - 8) + i, paint);
+        }
         paint.setColor(currentDayIndicatorColor);
-        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.15));
-        canvas.drawCircle(cx, cy - 10, circleRadius / 2 - 5, paint);
-        paint.setColor(currentDayIndicatorColor);
-        canvas.drawCircle(cx, cy - 10, circleRadius / 2 - 10, paint);
+//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
+//        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
+//        paint.setColor(currentDayIndicatorColor);
+//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.15));
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - 5, paint);
+//        paint.setColor(currentDayIndicatorColor);
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - 10, paint);
     }
 
     //Draws rectangle shape indicator on canvas
@@ -700,7 +746,13 @@ class ITSCustomCalendarController {
 
     //Draws rectangle shape indicator with shadow on canvas
     private void drawRectangleIndicatorWithShadow(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
         canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
+        paint.setColor(currentDayIndicatorColor);
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.15));
+        canvas.drawRect(new RectF(start_x + 10, start_y + 10, end_x - 10, end_y - 10), paint);
+        paint.setColor(currentDayIndicatorColor);
+        canvas.drawRect(new RectF(start_x + 20, start_y + 20, end_x - 20, end_y - 20), paint);
     }
 
     //Draws square shape indicator on canvas
@@ -1171,4 +1223,8 @@ class ITSCustomCalendarController {
 
     //</Custom days indicator shape params>
     //--------------------------------------------------------------------------------
+
+    void setShowGridView(boolean showGridView) {
+        this.showGridView = showGridView;
+    }
 }

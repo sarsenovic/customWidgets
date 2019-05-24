@@ -81,6 +81,7 @@ public class ITSCustomCalendarView extends View {
                 new Paint(), new Rect(), Color.argb(255, 233, 84, 81), Color.argb(255, 219, 219, 219),
                 Color.argb(255, 64, 64, 64), VelocityTracker.obtain());
         gestureDetector = new GestureDetectorCompat(getContext(), gestureListener);
+        setLayerType(LAYER_TYPE_SOFTWARE, null);
     }
 
     public ITSCustomCalendarView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -89,6 +90,7 @@ public class ITSCustomCalendarView extends View {
                 new Paint(), new Rect(), Color.argb(255, 233, 84, 81), Color.argb(255, 219, 219, 219),
                 Color.argb(255, 64, 64, 64), VelocityTracker.obtain());
         gestureDetector = new GestureDetectorCompat(getContext(), gestureListener);
+        setLayerType(LAYER_TYPE_SOFTWARE, null);
     }
 
     @Override
@@ -173,6 +175,10 @@ public class ITSCustomCalendarView extends View {
     public void setFirstDayOfWeek(int dayOfWeek) {
         itsCustomCalendarController.setFirstDayOfWeek(dayOfWeek);
         invalidate();
+    }
+
+    public void setShowGridView(boolean showGridView) {
+        itsCustomCalendarController.setShowGridView(showGridView);
     }
 
     //********************************************************************************
@@ -390,13 +396,13 @@ public class ITSCustomCalendarView extends View {
 
     public void setCurrentDayIndicatorShape(IndicatorShapes indicatorShape) {
         itsCustomCalendarController.setCurrentDayIndicatorShape(indicatorShape);
-        invalidate();
+//        invalidate();
     }
 
     /*STROKE, FILL, STROKE_AND_FILL*/
     public void setCurrentDayIndicatorStyle(Paint.Style currentDayIndicatorStyle) {
         itsCustomCalendarController.setCurrentDayIndicatorStyle(currentDayIndicatorStyle);
-        invalidate();
+//        invalidate();
     }
 
     public void setCurrentDayIndicatorColor(int currentDayIndicatorColor) {
@@ -470,7 +476,6 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-
     //    Scrolls calendar to the right. Be carefull with RTL layouts (If RTL is true this scroll will show to the previous month.
     public void scrollToRight() {
         itsCustomCalendarController.scrollToRight();
@@ -501,4 +506,5 @@ public class ITSCustomCalendarView extends View {
         //allow gesture detector onSingleTap and scroll events
         return gestureDetector.onTouchEvent(motionEvent);
     }
+
 }
