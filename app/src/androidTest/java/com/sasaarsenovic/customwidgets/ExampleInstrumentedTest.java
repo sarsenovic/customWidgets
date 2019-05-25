@@ -1,4 +1,4 @@
-package com.example.customwidgets;
+package com.sasaarsenovic.customwidgets;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

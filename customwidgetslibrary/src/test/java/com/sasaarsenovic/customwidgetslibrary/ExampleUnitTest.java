@@ -1,4 +1,4 @@
-package com.example.customwidgets;
+package com.sasaarsenovic.customwidgetslibrary;
 
 import org.junit.Test;
 

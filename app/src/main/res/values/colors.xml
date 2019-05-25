@@ -12,6 +12,7 @@
     <color name="blue">#0000FF</color>
     <color name="black">#000</color>
     <color name="yellow">#FFFF00</color>
+    <color name="light_yellow">#FFFFA2</color>
     <color name="cyan">#00FFFF</color>
     <color name="gray">#e6e6e6</color>
     <color name="gray_dark">#4f4f4f</color>
