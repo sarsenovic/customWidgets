@@ -38,18 +38,22 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
 
         itsCustomCalendarView.setListener(this);
 
-        itsCustomCalendarView.setBackgroundResource(R.drawable.gradient_test);
-        itsCustomCalendarView.setShowGridView(true);
+//        itsCustomCalendarView.setBackgroundResource(R.drawable.gradient_test);
+        itsCustomCalendarView.setShowGridView(false);
+//        itsCustomCalendarView.setGridViewColor(getResources().getColor(R.color.yellow));
 
         itsCustomCalendarView.setShouldDrawDaysHeader(true);
         itsCustomCalendarView.setUsingThreeLetterForWeek(true);
-        itsCustomCalendarView.setCalendarWeekDaysTextColor(getResources().getColor(R.color.white));
+        itsCustomCalendarView.setCalendarWeekDaysTextColor(getResources().getColor(R.color.midnight_blue));
         itsCustomCalendarView.shouldDrawLineDividerUnderWeekDaysHeader(false);
         itsCustomCalendarView.setLineDividerUnderWeekDaysHeaderHeight(1);
         itsCustomCalendarView.setLineDividerUnderWeekDaysHeaderColor(getResources().getColor(R.color.white));
         itsCustomCalendarView.setRtl(false);
         itsCustomCalendarView.setDisplayOtherMonthDays(true); //TODO: popraviti, ne sme da prelazi u sledeci red ako je trenutni ceo ispunjen
-        itsCustomCalendarView.setOtherMonthDaysColor(getResources().getColor(R.color.sweet_green));
+        itsCustomCalendarView.setOtherMonthDaysColor(getResources().getColor(R.color.red));
+
+//        itsCustomCalendarView.shouldScrollMonth(false);
+//        itsCustomCalendarView.shouldScrollMonthVerticaly(true);
 
         itsCustomCalendarView.setFirstDayOfWeek(Calendar.MONDAY);
 
@@ -58,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
         itsCustomCalendarView.setCurrentDateTextColor(Color.RED);
         itsCustomCalendarView.setSelectedDateTextColor(Color.RED); //zavrsiti
 
-        itsCustomCalendarView.setColorForWeekendDays(getResources().getColor(R.color.light_yellow));
+        itsCustomCalendarView.setColorForWeekendDays(getResources().getColor(R.color.yellow));
         itsCustomCalendarView.shouldPaintWeekendDaysForOtherMonths(false);
 
         itsCustomCalendarView.shouldDisplayDividerForRows(false);
@@ -88,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
         sensorManager.registerListener(sensorEventListener2, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
         itsCustomCalendarView.showParallaxEffect(false);
 
-//        itsCustomCalendarView.setTargetHeight(250);
+//        itsCustomCalendarView.setTargetHeight(350);
 
         itsCustomCalendarView.setCurrentDate(calendar.getTime());
         monthName.setText(itsCustomCalendarView.getCurrentMonthName() + " " + itsCustomCalendarView.getYearStringForCurrentMonth());
@@ -108,9 +112,13 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
         });
 
         itsCustomCalendarView.shouldShowIndicatorForCurrentDay(true);
-        itsCustomCalendarView.setCurrentDayIndicatorShape(IndicatorShapes.CIRCLE_WITH_SHADOW);
+        itsCustomCalendarView.setCurrentDayIndicatorShape(IndicatorShapes.CIRCLE);
         itsCustomCalendarView.setCurrentDayIndicatorColor(getResources().getColor(R.color.white));
         itsCustomCalendarView.setCurrentDayIndicatorStyle(Paint.Style.FILL);
+
+        itsCustomCalendarView.shouldDrawCustomDayColumnColor(true);
+        itsCustomCalendarView.shouldPaintCustomDayColumnColorForDayName(true);
+        itsCustomCalendarView.setCustomDayColumnColor(Color.BLACK);
 
     }
 

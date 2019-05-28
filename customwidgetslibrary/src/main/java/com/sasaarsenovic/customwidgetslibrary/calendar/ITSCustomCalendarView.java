@@ -23,6 +23,7 @@ public class ITSCustomCalendarView extends View {
     private GestureDetectorCompat gestureDetector;
     private ITSCustomCalendarController itsCustomCalendarController;
     private boolean horizontalScrollEnabled = true;
+    private boolean verticalScrollEnabled = false;
 
     public interface ITSCustomCalendarViewListener {
         void onDayClick(Date dateClicked);
@@ -48,6 +49,13 @@ public class ITSCustomCalendarView extends View {
             /*return super.onScroll(e1, e2, distanceX, distanceY);*/
             if (horizontalScrollEnabled) {
                 if (Math.abs(distanceX) > 0) {
+                    getParent().requestDisallowInterceptTouchEvent(true); //when child doesn't want this parent and its ancestors to intercept touch events with (Android docs)
+                    itsCustomCalendarController.onScroll(e1, e2, distanceX, distanceY);
+                    invalidate();
+                    return true;
+                }
+            } else if (verticalScrollEnabled) {
+                if (Math.abs(distanceY) > 0) {
                     getParent().requestDisallowInterceptTouchEvent(true); //when child doesn't want this parent and its ancestors to intercept touch events with (Android docs)
                     itsCustomCalendarController.onScroll(e1, e2, distanceX, distanceY);
                     invalidate();
@@ -140,13 +148,13 @@ public class ITSCustomCalendarView extends View {
     Android docs:
     Check if this view can be scrolled vertically in a certain direction.
     */
-    /*@Override
+    @Override
     public boolean canScrollVertically(int direction) {
         if (this.getVisibility() == GONE) {
             return false;
         }
-        return false;
-    }*/
+        return this.verticalScrollEnabled;
+    }
 
     //Use a custom locale for calendar. View is going to reinitialise
     public void setLocale(TimeZone timeZone, Locale locale) {
@@ -179,6 +187,10 @@ public class ITSCustomCalendarView extends View {
 
     public void setShowGridView(boolean showGridView) {
         itsCustomCalendarController.setShowGridView(showGridView);
+    }
+
+    public void setGridViewColor(int gridViewColor) {
+        itsCustomCalendarController.setGridViewColor(gridViewColor);
     }
 
     //********************************************************************************
@@ -416,6 +428,34 @@ public class ITSCustomCalendarView extends View {
     //</Current day indicator shape params>
     //--------------------------------------------------------------------------------
 
+
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Current day column params>
+
+    public void shouldDrawCustomDayColumnColor(boolean shouldDrawCustomDayColumnColor) {
+        itsCustomCalendarController.shouldDrawCustomDayColumnColor(shouldDrawCustomDayColumnColor);
+    }
+
+    //Color for customDayColumn
+    public void setCustomDayColumnColor(int customDayColumnColor) {
+        itsCustomCalendarController.setCustomDayColumnColor(customDayColumnColor);
+    }
+
+    //Should paint custom column day name
+    public void shouldPaintCustomDayColumnColorForDayName(boolean shouldPaintCustomDayColumnColorForDayName) {
+        itsCustomCalendarController.shouldPaintCustomDayColumnColorForDayName(shouldPaintCustomDayColumnColorForDayName);
+    }
+
+    //Color for other month days for custom column
+    public void shouldDrawCustomDayColumnColorForOtherMonthDays(boolean customDayColumnColorForOtherMonthDays) {
+        itsCustomCalendarController.shouldDrawCustomDayColumnColorForOtherMonthDays(customDayColumnColorForOtherMonthDays);
+    }
+
+    //</Current day column params>
+    //--------------------------------------------------------------------------------
+
     public void setDisplayOtherMonthDays(boolean displayOtherMonthDays) {
         itsCustomCalendarController.setDisplayOtherMonthDays(displayOtherMonthDays);
         invalidate();
@@ -488,17 +528,34 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-    public void shouldScrollMonth(boolean enableHorizontalScroll) {
+    public void shouldScrollMonthHorizontaly(boolean enableHorizontalScroll) {
         this.horizontalScrollEnabled = enableHorizontalScroll;
+        this.verticalScrollEnabled = !enableHorizontalScroll;
+    }
+
+    public void shouldScrollMonthVerticaly(boolean enableVerticalScroll) {
+        this.verticalScrollEnabled = enableVerticalScroll;
+        this.horizontalScrollEnabled = !enableVerticalScroll;
+    }
+
+    public void shouldScrollMonth(boolean shouldScrollMonth) {
+        //if it's true than allow horizontal scrolling else disable both scrolling directions
+        if (!shouldScrollMonth) {
+            this.horizontalScrollEnabled = shouldScrollMonth;
+            this.verticalScrollEnabled = shouldScrollMonth;
+        } else {
+            this.horizontalScrollEnabled = shouldScrollMonth;
+            this.verticalScrollEnabled = !shouldScrollMonth;
+        }
     }
 
     public boolean onTouchEvent(MotionEvent motionEvent) {
-        if (horizontalScrollEnabled) {
+        if (horizontalScrollEnabled || verticalScrollEnabled) {
             itsCustomCalendarController.onTouch(motionEvent);
             invalidate();
         }
 
-        if ((motionEvent.getAction() == MotionEvent.ACTION_CANCEL || motionEvent.getAction() == MotionEvent.ACTION_UP) && horizontalScrollEnabled) {
+        if ((motionEvent.getAction() == MotionEvent.ACTION_CANCEL || motionEvent.getAction() == MotionEvent.ACTION_UP) && (horizontalScrollEnabled || verticalScrollEnabled)) {
             //when onTouch finished, we need to allow again the parent to intercept touch events (scrolling)
             getParent().requestDisallowInterceptTouchEvent(false);
         }
