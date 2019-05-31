@@ -8,6 +8,7 @@
 
     <color name="red">#FF0000</color>
     <color name="white">#FFF</color>
+    <color name="white_alpha">#32FFFFFF</color>
     <color name="green">#00FF00</color>
     <color name="blue">#0000FF</color>
     <color name="black">#000</color>
@@ -20,4 +21,8 @@
     <color name="purple_dark">#0E1335</color>
     <color name="purple_light">#5A66BE</color>
     <color name="sweet_green">#2EBEA1</color>
+
+    <color name="custom_purple">#A22EA7</color>
+    <color name="orange">#FF9800</color>
+    <color name="red_light">#FF5E5E</color>
 </resources>

@@ -246,8 +246,8 @@ public class ITSCustomCalendarView extends View {
         itsCustomCalendarController.setColorForWeekendDays(colorForWeekendDays);
     }
 
-    public void shouldPaintWeekendDaysForOtherMonths(boolean shouldPaintWeekendDaysForOtherMonths) {
-        itsCustomCalendarController.shouldPaintWeekendDaysForOtherMonths(shouldPaintWeekendDaysForOtherMonths);
+    public void setShouldPaintWeekendDaysForOtherMonths(boolean shouldPaintWeekendDaysForOtherMonths) {
+        itsCustomCalendarController.setShouldPaintWeekendDaysForOtherMonths(shouldPaintWeekendDaysForOtherMonths);
     }
 
     //Indicator color type
@@ -434,8 +434,9 @@ public class ITSCustomCalendarView extends View {
     //********************************************************************************
     //<Current day column params>
 
-    public void shouldDrawCustomDayColumnColor(boolean shouldDrawCustomDayColumnColor) {
-        itsCustomCalendarController.shouldDrawCustomDayColumnColor(shouldDrawCustomDayColumnColor);
+    //Select week day to customize column for that day
+    public void setWeekDayForCustomizeItsColumn(int weekDay) {
+        itsCustomCalendarController.setWeekDayForCustomizeItsColumn(weekDay);
     }
 
     //Color for customDayColumn
@@ -443,14 +444,19 @@ public class ITSCustomCalendarView extends View {
         itsCustomCalendarController.setCustomDayColumnColor(customDayColumnColor);
     }
 
-    //Should paint custom column day name
+    //True for paint otherMonth dates in customDayColumnColor, false for otherMonthDaysColor
+    public void shouldPaintCustomDayColumnColorForOtherMonthDays(boolean shouldPaintCustomDayColumnForOtherMonthDays) {
+        itsCustomCalendarController.shouldPaintCustomDayColumnColorForOtherMonthDays(shouldPaintCustomDayColumnForOtherMonthDays);
+    }
+
+    //True for paint custom column day name in customDayColumnColor, false for colorForWeekendDays
     public void shouldPaintCustomDayColumnColorForDayName(boolean shouldPaintCustomDayColumnColorForDayName) {
         itsCustomCalendarController.shouldPaintCustomDayColumnColorForDayName(shouldPaintCustomDayColumnColorForDayName);
     }
 
-    //Color for other month days for custom column
-    public void shouldDrawCustomDayColumnColorForOtherMonthDays(boolean customDayColumnColorForOtherMonthDays) {
-        itsCustomCalendarController.shouldDrawCustomDayColumnColorForOtherMonthDays(customDayColumnColorForOtherMonthDays);
+    //True for paint current day in selected customized column in customDayColumnColor, false for currentDateTextColor
+    public void setShouldPaintCurrentDayForSelectedCustomizableDayColumn(boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
+        itsCustomCalendarController.setShouldPaintCurrentDayForSelectedCustomizableDayColumn(shouldPaintCurrentDayForSelectedCustomizableDayColumn);
     }
 
     //</Current day column params>
@@ -516,29 +522,29 @@ public class ITSCustomCalendarView extends View {
         invalidate();
     }
 
-    //    Scrolls calendar to the right. Be carefull with RTL layouts (If RTL is true this scroll will show to the previous month.
+    //Scrolls calendar to the right. Be carefull with RTL layouts (If RTL is true this scroll will show to the previous month.
     public void scrollToRight() {
         itsCustomCalendarController.scrollToRight();
         invalidate();
     }
 
-    //    Scrolls calendar to the left. Be carefull with RTL layouts (If RTL is true this scroll will show to the next month.
+    //Scrolls calendar to the left. Be carefull with RTL layouts (If RTL is true this scroll will show to the next month.
     public void scrollToLeft() {
         itsCustomCalendarController.scrollToLeft();
         invalidate();
     }
 
-    public void shouldScrollMonthHorizontaly(boolean enableHorizontalScroll) {
+    public void setShouldScrollMonthHorizontaly(boolean enableHorizontalScroll) {
         this.horizontalScrollEnabled = enableHorizontalScroll;
         this.verticalScrollEnabled = !enableHorizontalScroll;
     }
 
-    public void shouldScrollMonthVerticaly(boolean enableVerticalScroll) {
+    public void setShouldScrollMonthVerticaly(boolean enableVerticalScroll) {
         this.verticalScrollEnabled = enableVerticalScroll;
         this.horizontalScrollEnabled = !enableVerticalScroll;
     }
 
-    public void shouldScrollMonth(boolean shouldScrollMonth) {
+    public void setShouldScrollMonth(boolean shouldScrollMonth) {
         //if it's true than allow horizontal scrolling else disable both scrolling directions
         if (!shouldScrollMonth) {
             this.horizontalScrollEnabled = shouldScrollMonth;

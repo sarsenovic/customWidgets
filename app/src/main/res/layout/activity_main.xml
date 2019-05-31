@@ -54,9 +54,9 @@
         <com.sasaarsenovic.customwidgetslibrary.calendar.ITSCustomCalendarView
             android:id="@+id/its_calendar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="150dp"
+            android:layout_gravity="center"
             android:paddingTop="25dp"
-            app:calendarTextSize="15sp"
             app:calendarDatesTextColor="@color/purple_light"
             app:calendarWeekDaysTextColor="@color/sweet_green" />
 

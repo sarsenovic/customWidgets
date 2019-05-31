@@ -31,7 +31,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import static android.graphics.Color.DKGRAY;
-import static android.view.View.LAYER_TYPE_SOFTWARE;
 
 class ITSCustomCalendarController {
     private static final int VELOCITY_UNIT_PIXELS_PER_SECOND = 1000;
@@ -74,7 +73,6 @@ class ITSCustomCalendarController {
     private float distanceX;
     private Calendar calendarWithFirstDayOfMonth;
     private Date currentDate = new Date();
-    private int firstDayOfWeekToDraw = Calendar.MONDAY;
     private String[] dayColumnNames;
     private float screenDensity = 1;
     private float growfactorIndicator;
@@ -109,15 +107,17 @@ class ITSCustomCalendarController {
     private int currentDayIndicatorColor;
     private boolean showGridView = false;
     private int gridViewColor;
+    private int weekDay = 0;
     private int customDayColumnColor;
-    private boolean customDayColumnColorForOtherMonthDays = false;
+    private boolean shouldPaintCustomDayColumnForOtherMonthDays = false;
     private boolean shouldPaintCustomDayColumnColorForDayName = false;
-    private boolean shouldDrawCustomDayColumnColor = false;
+    private boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn = false;
 
     private Date[] customDatesForCustomDrawing;
     private int customDaysTextColor;
     private Paint.Style customDaysPaintStyle;
 
+    private int firstDayOfWeekToDraw = Calendar.MONDAY;
     private OverScroller overScroller;
     private Rect textSizeRect;
     private Locale locale;
@@ -147,8 +147,8 @@ class ITSCustomCalendarController {
         loadAttrs(attrs, context);
         init(context);
     }
-
     //Loading attributes from xml
+
     private void loadAttrs(AttributeSet attrs, Context context) {
         if (attrs != null && context != null) {
             TypedArray typedArray = context.getTheme().obtainStyledAttributes(attrs, R.styleable.ITSCustomCalendarView, 0, 0);
@@ -180,60 +180,60 @@ class ITSCustomCalendarController {
 
     //Initialization on ITSCustomCalendarController
     private void init(Context context) {
-        if (context != null) {
-            colorForWeekendDays = calendarDatesTextColor;
-            shadowPaint = new Paint();
-            parallaxPaint = new Paint();
+//        if (context != null) {
+        colorForWeekendDays = calendarDatesTextColor;
+        shadowPaint = new Paint();
+        parallaxPaint = new Paint();
 
-            densityParallax1 = Calculations.getPxFromDp(context, 1);
-            densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
-            densityParallax2 = Calculations.getPxFromDp(context, 2);
+//            densityParallax1 = Calculations.getPxFromDp(context, 1);
+//            densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
+//            densityParallax2 = Calculations.getPxFromDp(context, 2);
 
-            currentCalendar = Calendar.getInstance(timeZone, locale);
-            todayCalendar = Calendar.getInstance(timeZone, locale);
-            calendarWithFirstDayOfMonth = Calendar.getInstance(timeZone, locale);
-            previousMonthCalendar = Calendar.getInstance(timeZone, locale);
+        currentCalendar = Calendar.getInstance(timeZone, locale);
+        todayCalendar = Calendar.getInstance(timeZone, locale);
+        calendarWithFirstDayOfMonth = Calendar.getInstance(timeZone, locale);
+        previousMonthCalendar = Calendar.getInstance(timeZone, locale);
 
-            currentCalendar.setMinimalDaysInFirstWeek(1);
-            todayCalendar.setMinimalDaysInFirstWeek(1);
-            calendarWithFirstDayOfMonth.setMinimalDaysInFirstWeek(1);
-            previousMonthCalendar.setMinimalDaysInFirstWeek(1);
+        currentCalendar.setMinimalDaysInFirstWeek(1);
+        todayCalendar.setMinimalDaysInFirstWeek(1);
+        calendarWithFirstDayOfMonth.setMinimalDaysInFirstWeek(1);
+        previousMonthCalendar.setMinimalDaysInFirstWeek(1);
 
-            dayPaint.setTextAlign(Paint.Align.CENTER);
-            dayPaint.setStyle(Paint.Style.STROKE);
-            dayPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-            if (typeface != null) {
-                dayPaint.setTypeface(typeface);
-            } else {
-                dayPaint.setTypeface(Typeface.SANS_SERIF);
-            }
-            dayPaint.setTextSize(textSize);
-            dayPaint.setColor(calendarDatesTextColor);
-            dayPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
-            textHeight = textSizeRect.height();
-            textWidth = textSizeRect.width();
+        dayPaint.setTextAlign(Paint.Align.CENTER);
+        dayPaint.setStyle(Paint.Style.STROKE);
+        dayPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
+        if (typeface != null) {
+            dayPaint.setTypeface(typeface);
+        } else {
+            dayPaint.setTypeface(Typeface.SANS_SERIF);
+        }
+        dayPaint.setTextSize(textSize);
+        dayPaint.setColor(calendarDatesTextColor);
+        dayPaint.getTextBounds("31", 0, "31".length(), textSizeRect);
+        textHeight = textSizeRect.height();
+        textWidth = textSizeRect.width();
 //            textHeight = textSizeRect.height() * 3;
 //            textWidth = textSizeRect.width() * 2;
 
-            todayCalendar.setTime(new Date());
-            currentCalendar.setTime(currentDate);
+        todayCalendar.setTime(new Date());
+        currentCalendar.setTime(currentDate);
 
-            setCalendarToMidnight(todayCalendar);
-            setCalendarToFirstDayOfMonth(calendarWithFirstDayOfMonth, currentDate, -monthsScrolledSoFar, 0);
-            setUsingThreeLetterForWeek(false);
+        setCalendarToMidnight(todayCalendar);
+        setCalendarToFirstDayOfMonth(calendarWithFirstDayOfMonth, currentDate, -monthsScrolledSoFar, 0);
+        setUsingThreeLetterForWeek(false);
 
-            initScreenDensityRelatedValues(context);
+        initScreenDensityRelatedValues(context);
 
-            xIndicatorOffset = 3.5f * screenDensity;
-            smallIndicatorRadius = 2.5f * screenDensity;
-            growFactor = Integer.MAX_VALUE;
+        xIndicatorOffset = 3.5f * screenDensity;
+        smallIndicatorRadius = 2.5f * screenDensity;
+        growFactor = Integer.MAX_VALUE;
 
-            gridViewColor = calendarDatesTextColor;
-            customDayColumnColor = calendarDatesTextColor;
-            path = new Path();
-        } else {
-            throw new NullPointerException();
-        }
+        gridViewColor = calendarDatesTextColor;
+        customDayColumnColor = calendarDatesTextColor;
+        path = new Path();
+//        } else {
+//            throw new NullPointerException();
+//        }
     }
 
     void onDraw(Canvas canvas) {
@@ -245,12 +245,58 @@ class ITSCustomCalendarController {
         drawScrollableCalendar(canvas);
     }
 
-    void onSingleTapUp(MotionEvent e) {
-
+    // Add a little leeway buy checking if amount scrolled is almost same as expected scroll
+    // as it maybe off by a few pixels
+    private boolean isScrolling() {
+        float scrolledX = Math.abs(accumulatedScrollOffset.x);
+        int expectedScrollX = Math.abs(width * monthsScrolledSoFar);
+        return scrolledX < expectedScrollX - 5 || scrolledX > expectedScrollX + 5;
     }
 
-    void onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+    void onSingleTapUp(MotionEvent e) {
+        // Don't handle single tap when calendar is scrolling and is not stationary
+        if (isScrolling()) {
+            return;
+        }
 
+        int dayColumn = Math.round((paddingLeft + e.getX() - paddingWidth - paddingRight) / widthPerDay);
+        int dayRow = Math.round((e.getY() - paddingHeight) / heightPerDay);
+
+        setCalendarToFirstDayOfMonth(calendarWithFirstDayOfMonth, currentDate, monthsScrolledSoFar(), 0);
+
+        int firstDayOfMonth = getDayOfWeek(calendarWithFirstDayOfMonth);
+
+        int dayOfMonth = ((dayRow - 1) * 7) - firstDayOfMonth;
+        if (isRtl) {
+            dayOfMonth += 6 - dayColumn;
+        } else {
+            dayOfMonth += dayColumn;
+        }
+        if (dayOfMonth < calendarWithFirstDayOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH)
+                && dayOfMonth >= 0) {
+            calendarWithFirstDayOfMonth.add(Calendar.DATE, dayOfMonth);
+
+            currentCalendar.setTimeInMillis(calendarWithFirstDayOfMonth.getTimeInMillis());
+            performOnDayClickCallback(currentCalendar.getTime());
+        }
+        //TODO: Uraditi i za ostale mesece
+    }
+
+    boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        if (isSmoothScrolling)
+            return true;
+//
+        if (direction == Direction.NONE) {
+            if (Math.abs(distanceX) > Math.abs(distanceY))
+                direction = Direction.HORIZONTAL;
+            else
+                direction = Direction.VERTICAL;
+        }
+//
+        isScrolling = true;
+//        this.distanceX = distanceX;
+
+        return true;
     }
 
     void onMeasure(int width, int height, int paddingRight, int paddingLeft) {
@@ -286,9 +332,10 @@ class ITSCustomCalendarController {
 
             DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
             multiDayIndicatorStrokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1, displayMetrics);
-        } else {
-            throw new NullPointerException();
         }
+//        else {
+//            throw new NullPointerException();
+//        }
     }
 
     private void calculateXPositionOfset() {
@@ -364,6 +411,12 @@ class ITSCustomCalendarController {
         int firstDayOfMonth = getDayOfWeek(monthForDrawCal);
         boolean isWeekend = false;
 
+        if (context != null) {
+            densityParallax1 = Calculations.getPxFromDp(context, 1);
+            densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
+            densityParallax2 = Calculations.getPxFromDp(context, 2);
+        }
+
         boolean isSameMonthAsToday = monthForDrawCal.get(Calendar.MONTH) == todayCalendar.get(Calendar.MONTH);
         boolean isSameYearAsToday = monthForDrawCal.get(Calendar.YEAR) == todayCalendar.get(Calendar.YEAR);
         boolean isSameMonthAsCurrentCalendar = monthForDrawCal.get(Calendar.MONTH) == currentCalendar.get(Calendar.MONTH) && monthForDrawCal.get(Calendar.YEAR) == currentCalendar.get(Calendar.YEAR);
@@ -409,7 +462,7 @@ class ITSCustomCalendarController {
             //Show grid view arround days
             if (showGridView) {
                 if (dayRow > 0) {
-                    if (dayColumn == 0 || dayColumn == 1 || dayColumn == 2 || dayColumn == 3 || dayColumn == 4 || dayColumn == 5 || dayColumn == 6) {
+                    if (dayColumn >= 0 && dayColumn < 7) {
                         dayPaint.setColor(gridViewColor);
                         if (typeface != null) {
                             dayPaint.setTypeface(typeface);
@@ -446,9 +499,10 @@ class ITSCustomCalendarController {
                     canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight + textHeight / 2, dayPaint);
 
                     //Custom drawing day column
-                    if (shouldDrawCustomDayColumnColor) {
+                    //Coloring dayName
+                    if (weekDay > 0) {
                         if (shouldPaintCustomDayColumnColorForDayName) {
-                            int selectedColumn = getDayColumn(getFirstDayOfWeek());
+                            int selectedColumn = getDayColumn(weekDay);
                             dayPaint.setColor(customDayColumnColor);
                             if (dayColumn == selectedColumn) {
                                 canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight + textHeight / 2, dayPaint);
@@ -500,6 +554,19 @@ class ITSCustomCalendarController {
                         }
 
                         canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
+
+                        //Custom drawing day column
+                        if (weekDay > 0) {
+                            if (shouldPaintCustomDayColumnForOtherMonthDays) {
+                                int selectedColumn = getDayColumn(weekDay);
+                                dayPaint.setColor(customDayColumnColor);
+                                if (dayColumn == selectedColumn) {
+                                    canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
+                                }
+                            }
+                            dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
+                        }
+
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
                 } else if (day > maxMonthDay) {
@@ -529,6 +596,19 @@ class ITSCustomCalendarController {
                         }
 
                         canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
+
+                        //Custom drawing day column
+                        if (weekDay > 0) {
+                            if (shouldPaintCustomDayColumnForOtherMonthDays) {
+                                int selectedColumn = getDayColumn(weekDay);
+                                dayPaint.setColor(customDayColumnColor);
+                                if (dayColumn == selectedColumn) {
+                                    canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
+                                }
+                            }
+                            dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
+                        }
+
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
                 } else {
@@ -552,8 +632,16 @@ class ITSCustomCalendarController {
                                 case CIRCLE:
                                     if (!(targetHeight > 0))
                                         drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
-                                    else
-                                        drawCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    else {
+//                                        drawCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        drawCircleIndicator(canvas, (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) / 2, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    }
+                                    break;
+                                case DOUBLE_CIRCLE:
+//                                    if (!(targetHeight > 0))
+//                                        drawDoubleCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+//                                    else
+//                                        drawDoubleCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
                                     break;
                                 case CIRCLE_WITH_SHADOW:
                                     if (!(targetHeight > 0))
@@ -563,6 +651,9 @@ class ITSCustomCalendarController {
                                     break;
                                 case RECTANGLE:
                                     drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
+                                    break;
+                                case DOUBLE_RECTANGLE:
+//                                    drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case RECTANGLE_WITH_SHADOW:
                                     drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
@@ -582,6 +673,9 @@ class ITSCustomCalendarController {
                                         }
                                     }
                                     break;
+                                case DOUBLE_SQUARE:
+                                    //
+                                    break;
                                 case SQUARE_WITH_SHADOW:
                                     //TODO: finish shadow view
                                     if (!(targetHeight > 0))
@@ -598,18 +692,6 @@ class ITSCustomCalendarController {
                                         }
                                     }
                                     break;
-                                case TRIANGLE:
-                                    //drawTriangleIndicator(canvas, circleRadius, cx, cy, paint);
-                                    break;
-                                case TRIANGLE_WITH_SHADOW:
-                                    //drawTriangleIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
-                                    break;
-                                case INVERSE_TRIANGLE:
-                                    //drawInverseTriangleIndicator(canvas, circleRadius, cx, cy, paint);
-                                    break;
-                                case INVERSE_TRIANGLE_WITH_SHADOW:
-                                    //drawInverseTriangleIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
-                                    break;
                                 case STAR:
                                     drawStarIndicator(canvas, dayColumn, dayRow, shadowPaint);
                                     break;
@@ -619,14 +701,8 @@ class ITSCustomCalendarController {
                                 case HEXAGON:
                                     //drawStarIndicator(canvas, circleRadius, cx, cy, paint);
                                     break;
-                                case HEXAGON_WITH_SHADOW:
-                                    //drawStarIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
-                                    break;
                                 case OCTAGON:
                                     //drawStarIndicator(canvas, circleRadius, cx, cy, paint);
-                                    break;
-                                case OCTAGON_WITH_SHADOW:
-                                    //drawStarIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
                                     break;
                                 case UNDERLINED:
                                     drawRectangleIndicator(canvas, widthPerDay * dayColumn, yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 2f), widthPerDay * (dayColumn + 1), yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 5f), shadowPaint);
@@ -664,7 +740,35 @@ class ITSCustomCalendarController {
                     if (showParallaxEffect) {
                         drawParallaxShadowEffect(canvas, parallaxPaint, String.valueOf(day), xPosition, yPosition);
                     }
+
                     canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
+
+                    //Custom drawing day column
+                    if (weekDay > 0) {
+                        int selectedColumn = getDayColumn(weekDay);
+                        if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+                            if (shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
+                                dayPaint.setColor(customDayColumnColor);
+                            } else {
+                                dayPaint.setColor(currentDateTextColor);
+                            }
+                        } else {
+                            dayPaint.setColor(customDayColumnColor);
+                        }
+//                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+//                        dayPaint.setColor(customDayColumnColor);
+//                            } else {
+//                                dayPaint.setColor(currentDateTextColor);
+//                            }
+//                        } else {
+//                            dayPaint.setColor(currentDateTextColor);
+//                        }
+                        if (dayColumn == selectedColumn) {
+                            canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
+                        }
+                        dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
+                    }
+
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
                 }
             }
@@ -762,21 +866,133 @@ class ITSCustomCalendarController {
 
     private int getDayColumn(int selectedDay) {
         if (!isRtl) {
-            switch (getFirstDayOfWeek()) {
+            switch (firstDayOfWeekToDraw) {
                 case 1:
-                    return 1;
+                    //First day is Sunday
+                    switch (selectedDay) {
+                        case 1:
+                            return 0;
+                        case 2:
+                            return 1;
+                        case 3:
+                            return 2;
+                        case 4:
+                            return 3;
+                        case 5:
+                            return 4;
+                        case 6:
+                            return 5;
+                        case 7:
+                            return 6;
+                    }
                 case 2:
-                    return 2;
+                    //First day is Monday
+                    switch (selectedDay) {
+                        case 1:
+                            return 6;
+                        case 2:
+                            return 0;
+                        case 3:
+                            return 1;
+                        case 4:
+                            return 2;
+                        case 5:
+                            return 3;
+                        case 6:
+                            return 4;
+                        case 7:
+                            return 5;
+                    }
                 case 3:
-                    return 3;
+                    //First day is Tuesday
+                    switch (selectedDay) {
+                        case 1:
+                            return 5;
+                        case 2:
+                            return 6;
+                        case 3:
+                            return 0;
+                        case 4:
+                            return 1;
+                        case 5:
+                            return 2;
+                        case 6:
+                            return 3;
+                        case 7:
+                            return 4;
+                    }
                 case 4:
-                    return 4;
+                    //First day is Wednesday
+                    switch (selectedDay) {
+                        case 1:
+                            return 4;
+                        case 2:
+                            return 5;
+                        case 3:
+                            return 6;
+                        case 4:
+                            return 0;
+                        case 5:
+                            return 1;
+                        case 6:
+                            return 2;
+                        case 7:
+                            return 3;
+                    }
                 case 5:
-                    return 5;
+                    //First day is Thursday
+                    switch (selectedDay) {
+                        case 1:
+                            return 3;
+                        case 2:
+                            return 4;
+                        case 3:
+                            return 5;
+                        case 4:
+                            return 6;
+                        case 5:
+                            return 0;
+                        case 6:
+                            return 1;
+                        case 7:
+                            return 2;
+                    }
                 case 6:
-                    return 6;
+                    //First day is Friday
+                    switch (selectedDay) {
+                        case 1:
+                            return 2;
+                        case 2:
+                            return 3;
+                        case 3:
+                            return 4;
+                        case 4:
+                            return 5;
+                        case 5:
+                            return 6;
+                        case 6:
+                            return 0;
+                        case 7:
+                            return 1;
+                    }
                 case 7:
-                    return 7;
+                    //First day is Saturday
+                    switch (selectedDay) {
+                        case 1:
+                            return 1;
+                        case 2:
+                            return 2;
+                        case 3:
+                            return 3;
+                        case 4:
+                            return 4;
+                        case 5:
+                            return 5;
+                        case 6:
+                            return 6;
+                        case 7:
+                            return 0;
+                    }
             }
         } else {
             return 0;
@@ -844,6 +1060,11 @@ class ITSCustomCalendarController {
         canvas.drawCircle(cx, cy, circleRadius / 2, paint);
     }
 
+    //Draws circle shape indicator on canvas
+    private void drawDoubleCircleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
+//        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
+    }
+
     //Draws circle shape indicator with shadow on canvas
     private void drawCircleIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
 //        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
@@ -866,6 +1087,11 @@ class ITSCustomCalendarController {
 
     //Draws rectangle shape indicator on canvas
     private void drawRectangleIndicator(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
+        canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
+    }
+
+    //Draws rectangle shape indicator on canvas
+    private void drawDoubleRectangleIndicator(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
         canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
     }
 
@@ -898,26 +1124,6 @@ class ITSCustomCalendarController {
     //Draws square shape indicator with shadow on canvas
     private void drawSquareIndicatorWithShadow(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
         canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
-    }
-
-    //Draws triangle shape indicator on canvas
-    private void drawTriangleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        //TODO: change method attributes
-    }
-
-    //Draws triangle shape indicator with shadow on canvas
-    private void drawTriangleIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        //TODO: change method attributes
-    }
-
-    //Draws inverse triangle shape indicator on canvas
-    private void drawInverseTriangleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        //TODO: change method attributes
-    }
-
-    //Draws inverse triangle shape indicator with shadow on canvas
-    private void drawInverseTriangleIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-        //TODO: change method attributes
     }
 
     //Draws star shape indicator on canvas
@@ -1015,7 +1221,6 @@ class ITSCustomCalendarController {
         init(null);
     }
 
-
     void setUsingThreeLetterForWeek(boolean useThreeLetter) {
         //setUseWeekDayAbbreviation
         this.useThreeLetterAbbreviation = useThreeLetter;
@@ -1045,10 +1250,6 @@ class ITSCustomCalendarController {
         previousMonthCalendar.setFirstDayOfWeek(dayOfWeek);
     }
 
-    int getFirstDayOfWeek() {
-        return firstDayOfWeekToDraw;
-    }
-
     boolean computeScroll() {
         if (overScroller.computeScrollOffset()) {
             accumulatedScrollOffset.x = overScroller.getCurrX();
@@ -1065,6 +1266,9 @@ class ITSCustomCalendarController {
         velocityTracker.addMovement(motionEvent);
 
         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+            if (!overScroller.isFinished()) {
+                overScroller.abortAnimation();
+            }
             isSmoothScrolling = false;
         } else if (motionEvent.getAction() == MotionEvent.ACTION_MOVE) {
             velocityTracker.addMovement(motionEvent);
@@ -1136,6 +1340,12 @@ class ITSCustomCalendarController {
     private void performMonthScrollCallback() {
         if (listener != null) {
             listener.onMonthScroll(getFirstDayOfCurrentMonth());
+        }
+    }
+
+    private void performOnDayClickCallback(Date dayClicked) {
+        if (listener != null) {
+            listener.onDayClick(dayClicked);
         }
     }
 
@@ -1318,7 +1528,7 @@ class ITSCustomCalendarController {
         this.colorForWeekendDays = colorForWeekendDays;
     }
 
-    void shouldPaintWeekendDaysForOtherMonths(boolean shouldPaintWeekendDaysForOtherMonths) {
+    void setShouldPaintWeekendDaysForOtherMonths(boolean shouldPaintWeekendDaysForOtherMonths) {
         this.shouldPaintWeekendDaysForOtherMonths = shouldPaintWeekendDaysForOtherMonths;
     }
 
@@ -1373,7 +1583,6 @@ class ITSCustomCalendarController {
     void setCurrentDayIndicatorColor(int currentDayIndicatorColor) {
         this.currentDayIndicatorColor = currentDayIndicatorColor;
     }
-
 
     //********************************************************************************
     //********************************************************************************
@@ -1433,21 +1642,33 @@ class ITSCustomCalendarController {
         this.gridViewColor = gridViewColor;
     }
 
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<Current day column params>
+
+    void setWeekDayForCustomizeItsColumn(int weekDay) {
+        this.weekDay = weekDay;
+    }
+
     //Color for custom day column
     void setCustomDayColumnColor(int customDayColumnColor) {
         this.customDayColumnColor = customDayColumnColor;
     }
 
-
-    void shouldDrawCustomDayColumnColorForOtherMonthDays(boolean customDayColumnColorForOtherMonthDays) {
-        this.customDayColumnColorForOtherMonthDays = customDayColumnColorForOtherMonthDays;
+    void shouldPaintCustomDayColumnColorForOtherMonthDays(boolean shouldPaintCustomDayColumnForOtherMonthDays) {
+        this.shouldPaintCustomDayColumnForOtherMonthDays = shouldPaintCustomDayColumnForOtherMonthDays;
     }
 
     void shouldPaintCustomDayColumnColorForDayName(boolean shouldPaintCustomDayColumnColorForDayName) {
         this.shouldPaintCustomDayColumnColorForDayName = shouldPaintCustomDayColumnColorForDayName;
     }
 
-    void shouldDrawCustomDayColumnColor(boolean shouldDrawCustomDayColumnColor) {
-        this.shouldDrawCustomDayColumnColor = shouldDrawCustomDayColumnColor;
+    //Paint for current day if weekDay > 0
+    void setShouldPaintCurrentDayForSelectedCustomizableDayColumn(boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
+        this.shouldPaintCurrentDayForSelectedCustomizableDayColumn = shouldPaintCurrentDayForSelectedCustomizableDayColumn;
     }
+
+    //</Current day column params>
+    //--------------------------------------------------------------------------------
 }

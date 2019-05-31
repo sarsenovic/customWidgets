@@ -2,20 +2,16 @@ package com.sasaarsenovic.customwidgetslibrary.calendar;
 
 public enum IndicatorShapes {
     CIRCLE,
+    DOUBLE_CIRCLE,
     SQUARE,
+    DOUBLE_SQUARE,
     RECTANGLE,
+    DOUBLE_RECTANGLE,
     STAR,
-    TRIANGLE,
-    INVERSE_TRIANGLE,
     HEXAGON,
     OCTAGON,
     CIRCLE_WITH_SHADOW,
     SQUARE_WITH_SHADOW,
     RECTANGLE_WITH_SHADOW,
-    STAR_WITH_SHADOW,
-    TRIANGLE_WITH_SHADOW,
-    INVERSE_TRIANGLE_WITH_SHADOW,
-    HEXAGON_WITH_SHADOW,
-    OCTAGON_WITH_SHADOW,
     UNDERLINED
 }

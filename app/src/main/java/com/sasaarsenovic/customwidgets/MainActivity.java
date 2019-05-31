@@ -18,6 +18,8 @@ import com.sasaarsenovic.customwidgetslibrary.calendar.IndicatorShapes;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity implements ITSCustomCalendarView.ITSCustomCalendarViewListener {
     private ITSCustomCalendarView itsCustomCalendarView;
@@ -37,33 +39,36 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
         right = findViewById(R.id.text_right);
 
         itsCustomCalendarView.setListener(this);
+//        itsCustomCalendarView.setLocale(TimeZone.getTimeZone("America/Los_Angeles"), Locale.US);
 
-//        itsCustomCalendarView.setBackgroundResource(R.drawable.gradient_test);
-        itsCustomCalendarView.setShowGridView(false);
+        itsCustomCalendarView.setBackgroundResource(R.drawable.gradient_test);
+        itsCustomCalendarView.setShowGridView(true);
 //        itsCustomCalendarView.setGridViewColor(getResources().getColor(R.color.yellow));
 
         itsCustomCalendarView.setShouldDrawDaysHeader(true);
-        itsCustomCalendarView.setUsingThreeLetterForWeek(true);
+        itsCustomCalendarView.setUsingThreeLetterForWeek(false);
         itsCustomCalendarView.setCalendarWeekDaysTextColor(getResources().getColor(R.color.midnight_blue));
+        itsCustomCalendarView.setShouldPaintWeekendDaysForOtherMonths(false);
         itsCustomCalendarView.shouldDrawLineDividerUnderWeekDaysHeader(false);
         itsCustomCalendarView.setLineDividerUnderWeekDaysHeaderHeight(1);
         itsCustomCalendarView.setLineDividerUnderWeekDaysHeaderColor(getResources().getColor(R.color.white));
+
+        itsCustomCalendarView.setColorForWeekendDays(getResources().getColor(R.color.yellow));
+
         itsCustomCalendarView.setRtl(false);
-        itsCustomCalendarView.setDisplayOtherMonthDays(true); //TODO: popraviti, ne sme da prelazi u sledeci red ako je trenutni ceo ispunjen
+
+        itsCustomCalendarView.setDisplayOtherMonthDays(false); //TODO: popraviti, ne sme da prelazi u sledeci red ako je trenutni ceo ispunjen
         itsCustomCalendarView.setOtherMonthDaysColor(getResources().getColor(R.color.red));
 
-//        itsCustomCalendarView.shouldScrollMonth(false);
-//        itsCustomCalendarView.shouldScrollMonthVerticaly(true);
+//        itsCustomCalendarView.setShouldScrollMonth(false);
+//        itsCustomCalendarView.setShouldScrollMonthVerticaly(false);
 
         itsCustomCalendarView.setFirstDayOfWeek(Calendar.MONDAY);
 
         itsCustomCalendarView.setCalendarDatesTextColor(getResources().getColor(R.color.white));
 
-        itsCustomCalendarView.setCurrentDateTextColor(Color.RED);
+        itsCustomCalendarView.setCurrentDateTextColor(getResources().getColor(R.color.red_light));
         itsCustomCalendarView.setSelectedDateTextColor(Color.RED); //zavrsiti
-
-        itsCustomCalendarView.setColorForWeekendDays(getResources().getColor(R.color.yellow));
-        itsCustomCalendarView.shouldPaintWeekendDaysForOtherMonths(false);
 
         itsCustomCalendarView.shouldDisplayDividerForRows(false);
         itsCustomCalendarView.setRowsDividerColor(getResources().getColor(R.color.light_yellow));
@@ -116,15 +121,17 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
         itsCustomCalendarView.setCurrentDayIndicatorColor(getResources().getColor(R.color.white));
         itsCustomCalendarView.setCurrentDayIndicatorStyle(Paint.Style.FILL);
 
-        itsCustomCalendarView.shouldDrawCustomDayColumnColor(true);
+        //Coloring for custom day column
+        itsCustomCalendarView.setWeekDayForCustomizeItsColumn(Calendar.WEDNESDAY);
+        itsCustomCalendarView.setCustomDayColumnColor(getResources().getColor(R.color.orange));
         itsCustomCalendarView.shouldPaintCustomDayColumnColorForDayName(true);
-        itsCustomCalendarView.setCustomDayColumnColor(Color.BLACK);
-
+        itsCustomCalendarView.shouldPaintCustomDayColumnColorForOtherMonthDays(true);
+        itsCustomCalendarView.setShouldPaintCurrentDayForSelectedCustomizableDayColumn(true);
     }
 
     @Override
     public void onDayClick(Date dateClicked) {
-        Toast.makeText(this, "", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, dateClicked.toString(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
