@@ -10,7 +10,7 @@ import com.androidnetworking.interfaces.JSONArrayRequestListener;
 import com.androidnetworking.interfaces.JSONObjectRequestListener;
 import com.androidnetworking.interfaces.StringRequestListener;
 import com.androidnetworking.interfaces.UploadProgressListener;
-import com.example.testcustomwidgetslibrary.exception.TagException;
+import com.sasaarsenovic.customwidgetslibrary.exception.TagException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
