@@ -22,11 +22,13 @@ import android.widget.OverScroller;
 import com.sasaarsenovic.customwidgetslibrary.Calculations;
 import com.sasaarsenovic.customwidgetslibrary.LoaderForFonts;
 import com.sasaarsenovic.customwidgetslibrary.R;
+import com.sasaarsenovic.customwidgetslibrary.calendar.event.Event;
 import com.sasaarsenovic.customwidgetslibrary.utils.ColorUtil;
 
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -107,11 +109,12 @@ class ITSCustomCalendarController {
     private int currentDayIndicatorColor;
     private boolean showGridView = false;
     private int gridViewColor;
-    private int weekDay = 0;
+    private int[] weekDays;
     private int customDayColumnColor;
     private boolean shouldPaintCustomDayColumnForOtherMonthDays = false;
     private boolean shouldPaintCustomDayColumnColorForDayName = false;
     private boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn = false;
+    private float bigCircleIndicatorRadius;
 
     private Date[] customDatesForCustomDrawing;
     private int customDaysTextColor;
@@ -125,6 +128,7 @@ class ITSCustomCalendarController {
     private Typeface typeface;
     private Calendar currentCalendar;
     private Calendar todayCalendar;
+    private Calendar eventsCalendar;
     private Calendar previousMonthCalendar;
     private Paint dayPaint = new Paint();
     private Paint shadowPaint;
@@ -132,10 +136,11 @@ class ITSCustomCalendarController {
     private float sensor_x, sensor_y, sensor_z;
     private Paint parallaxPaint;
     private Path path;
+    private EventsOperations eventsOperations;
 
     ITSCustomCalendarController(Context context, Locale locale, TimeZone timeZone, AttributeSet attrs, OverScroller overScroller, Paint dayPaint,
                                 Rect textSizeRect, int currentDayBackgroundColor, int currentSelectedDayBackgroundColor, int calendarTextColor,
-                                VelocityTracker velocityTracker) {
+                                VelocityTracker velocityTracker, EventsOperations eventsOperations) {
         this.overScroller = overScroller;
         this.locale = locale;
         this.timeZone = timeZone;
@@ -144,6 +149,7 @@ class ITSCustomCalendarController {
         this.textSizeRect = textSizeRect;
         this.calendarDatesTextColor = calendarTextColor;
         this.context = context;
+        this.eventsOperations = eventsOperations;
         loadAttrs(attrs, context);
         init(context);
     }
@@ -180,24 +186,21 @@ class ITSCustomCalendarController {
 
     //Initialization on ITSCustomCalendarController
     private void init(Context context) {
-//        if (context != null) {
         colorForWeekendDays = calendarDatesTextColor;
         shadowPaint = new Paint();
         parallaxPaint = new Paint();
-
-//            densityParallax1 = Calculations.getPxFromDp(context, 1);
-//            densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
-//            densityParallax2 = Calculations.getPxFromDp(context, 2);
 
         currentCalendar = Calendar.getInstance(timeZone, locale);
         todayCalendar = Calendar.getInstance(timeZone, locale);
         calendarWithFirstDayOfMonth = Calendar.getInstance(timeZone, locale);
         previousMonthCalendar = Calendar.getInstance(timeZone, locale);
+        eventsCalendar = Calendar.getInstance(timeZone, locale);
 
         currentCalendar.setMinimalDaysInFirstWeek(1);
         todayCalendar.setMinimalDaysInFirstWeek(1);
         calendarWithFirstDayOfMonth.setMinimalDaysInFirstWeek(1);
         previousMonthCalendar.setMinimalDaysInFirstWeek(1);
+        eventsCalendar.setMinimalDaysInFirstWeek(1);
 
         dayPaint.setTextAlign(Paint.Align.CENTER);
         dayPaint.setStyle(Paint.Style.STROKE);
@@ -231,9 +234,6 @@ class ITSCustomCalendarController {
         gridViewColor = calendarDatesTextColor;
         customDayColumnColor = calendarDatesTextColor;
         path = new Path();
-//        } else {
-//            throw new NullPointerException();
-//        }
     }
 
     void onDraw(Canvas canvas) {
@@ -299,6 +299,10 @@ class ITSCustomCalendarController {
         return true;
     }
 
+    float getDayIndicatorRadius() {
+        return bigCircleIndicatorRadius;
+    }
+
     void onMeasure(int width, int height, int paddingRight, int paddingLeft) {
         widthPerDay = (width) / DAYS_IN_WEEK; //91
         heightPerDay = targetHeight > 0 ? targetHeight / 7 : height / 7; //1282 / 7 (targetHeight doesn't defined)
@@ -309,10 +313,23 @@ class ITSCustomCalendarController {
         this.paddingLeft = paddingLeft;
 
         //makes easier to find radius
-//        bigCircleIndicatorRadius = getInterpolatedBigCircleIndicator();
+        bigCircleIndicatorRadius = getInterpolatedBigCircleIndicator();
 
         // scale the selected day indicators slightly so that event indicators can be drawn below
 //        bigCircleIndicatorRadius = shouldDrawIndicatorsBelowSelectedDays && eventIndicatorStyle == CompactCalendarView.SMALL_INDICATOR ? bigCircleIndicatorRadius * 0.85f : bigCircleIndicatorRadius;
+    }
+
+    //assume square around each day of width and height = heightPerDay and get diagonal line length
+    //interpolate height and radius
+    //https://en.wikipedia.org/wiki/Linear_interpolation
+    private float getInterpolatedBigCircleIndicator() {
+        float x0 = textSizeRect.height();
+        float x1 = heightPerDay; // take into account indicator offset
+        float x = (x1 + textSizeRect.height()) / 2f; // pick a point which is almost half way through heightPerDay and textSizeRect
+        double y1 = 0.5 * Math.sqrt((x1 * x1) + (x1 * x1));
+        double y0 = 0.5 * Math.sqrt((x0 * x0) + (x0 * x0));
+
+        return (float) (y0 + ((y1 - y0) * ((x - x0) / (x1 - x0))));
     }
 
     private void setCalendarToMidnight(Calendar calendar) {
@@ -346,7 +363,7 @@ class ITSCustomCalendarController {
 
     private void drawCalendarBackground(Canvas canvas) {
         dayPaint.setColor(calendarBackgroundColor);
-        dayPaint.setStyle(Paint.Style.FILL); //TODO: Do STROKE style
+        dayPaint.setStyle(Paint.Style.FILL);
         canvas.drawRect(0, 0, width, height, dayPaint);
         dayPaint.setStyle(Paint.Style.STROKE);
         dayPaint.setColor(calendarDatesTextColor);
@@ -408,10 +425,13 @@ class ITSCustomCalendarController {
 
     //Draws calendar month on canvas with custom parameters
     private void drawMonth(Canvas canvas, Calendar monthForDrawCal, int offset) {
+        drawEvents(canvas, monthForDrawCal, offset);
+
         int firstDayOfMonth = getDayOfWeek(monthForDrawCal);
         boolean isWeekend = false;
 
         if (context != null) {
+            //TODO: Fix calculations according to phone density
             densityParallax1 = Calculations.getPxFromDp(context, 1);
             densityParallax15 = Calculations.getPxFromDp(context, 1.5f);
             densityParallax2 = Calculations.getPxFromDp(context, 2);
@@ -500,16 +520,19 @@ class ITSCustomCalendarController {
 
                     //Custom drawing day column
                     //Coloring dayName
-                    if (weekDay > 0) {
+                    if (weekDays != null && weekDays.length > 0) {
                         if (shouldPaintCustomDayColumnColorForDayName) {
-                            int selectedColumn = getDayColumn(weekDay);
-                            dayPaint.setColor(customDayColumnColor);
-                            if (dayColumn == selectedColumn) {
-                                canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight + textHeight / 2, dayPaint);
+                            for (int i = 0; i < weekDays.length; i++) {
+                                int selectedColumn = getDayColumn(weekDays[i]);
+                                dayPaint.setColor(customDayColumnColor);
+                                if (dayColumn == selectedColumn) {
+                                    canvas.drawText(dayColumnNames[columnDirection], xPosition, paddingHeight + textHeight / 2, dayPaint);
+                                }
                             }
                         }
                         dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
                     }
+                    dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
 
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
 
@@ -556,16 +579,19 @@ class ITSCustomCalendarController {
                         canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
 
                         //Custom drawing day column
-                        if (weekDay > 0) {
+                        if (weekDays != null && weekDays.length > 0) {
                             if (shouldPaintCustomDayColumnForOtherMonthDays) {
-                                int selectedColumn = getDayColumn(weekDay);
-                                dayPaint.setColor(customDayColumnColor);
-                                if (dayColumn == selectedColumn) {
-                                    canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
+                                for (int i = 0; i < weekDays.length; i++) {
+                                    int selectedColumn = getDayColumn(weekDays[i]);
+                                    dayPaint.setColor(customDayColumnColor);
+                                    if (dayColumn == selectedColumn) {
+                                        canvas.drawText(String.valueOf(maxPreviousMonthDay + day), xPosition, yPosition, dayPaint);
+                                    }
                                 }
                             }
                             dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
                         }
+                        dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
 
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
@@ -598,16 +624,19 @@ class ITSCustomCalendarController {
                         canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
 
                         //Custom drawing day column
-                        if (weekDay > 0) {
+                        if (weekDays != null && weekDays.length > 0) {
                             if (shouldPaintCustomDayColumnForOtherMonthDays) {
-                                int selectedColumn = getDayColumn(weekDay);
-                                dayPaint.setColor(customDayColumnColor);
-                                if (dayColumn == selectedColumn) {
-                                    canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
+                                for (int i = 0; i < weekDays.length; i++) {
+                                    int selectedColumn = getDayColumn(weekDays[i]);
+                                    dayPaint.setColor(customDayColumnColor);
+                                    if (dayColumn == selectedColumn) {
+                                        canvas.drawText(String.valueOf(day - maxMonthDay), xPosition, yPosition, dayPaint);
+                                    }
                                 }
                             }
                             dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
                         }
+                        dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
 
                         dayPaint.setTypeface(Typeface.DEFAULT);
                     }
@@ -620,7 +649,7 @@ class ITSCustomCalendarController {
                     }
 
                     if (shouldShowIndicatorForCurrentDay) {
-                        if (todayDayOfMonth == day && isSameMonthAsToday && isSameMonthAsToday) {
+                        if (todayDayOfMonth == day && isSameMonthAsToday) {
                             //draws indicator shape for current day
                             shadowPaint.setColor(currentDayIndicatorColor);
                             shadowPaint.setTextAlign(Paint.Align.CENTER);
@@ -630,39 +659,73 @@ class ITSCustomCalendarController {
                             //Ovde mogu da stavljam text height zato sto znam da su datumi uvek brojevi a resetovan je na pocetku for petlje (ne moram da uzimam textHeight za shadowPaint)
                             switch (currentDayIndicatorShape) {
                                 case CIRCLE:
-                                    if (!(targetHeight > 0))
-                                        drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
-                                    else {
+                                    if (!(targetHeight > 0)) {
+                                        if (widthPerDay >= heightPerDay)
+                                            drawCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        else
+                                            drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    } else {
 //                                        drawCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
-                                        drawCircleIndicator(canvas, (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) / 2, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        if (widthPerDay >= heightPerDay) {
+//                                            drawCircleIndicator(canvas, (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) / 2, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                            drawCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        } else {
+                                            drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        }
                                     }
                                     break;
                                 case DOUBLE_CIRCLE:
-//                                    if (!(targetHeight > 0))
-//                                        drawDoubleCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
-//                                    else
-//                                        drawDoubleCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    if (!(targetHeight > 0)) {
+                                        if (widthPerDay >= heightPerDay) {
+                                            drawDoubleCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        } else {
+                                            drawDoubleCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        }
+                                    } else {
+                                        if (widthPerDay >= heightPerDay) {
+                                            drawDoubleCircleIndicator(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        } else {
+                                            drawDoubleCircleIndicator(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        }
+                                    }
                                     break;
                                 case CIRCLE_WITH_SHADOW:
-                                    if (!(targetHeight > 0))
-                                        drawCircleIndicatorWithShadow(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
-                                    else
-                                        drawCircleIndicatorWithShadow(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    //TODO: finish shadow view
+                                    if (!(targetHeight > 0)) {
+                                        if (widthPerDay >= heightPerDay)
+                                            drawCircleIndicatorWithShadow(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        else
+                                            drawCircleIndicatorWithShadow(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    } else {
+                                        if (widthPerDay >= heightPerDay)
+                                            drawCircleIndicatorWithShadow(canvas, heightPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                        else
+                                            drawCircleIndicatorWithShadow(canvas, widthPerDay, xPosition, yPosition - textHeight / 2, shadowPaint);
+                                    }
                                     break;
                                 case RECTANGLE:
                                     drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case DOUBLE_RECTANGLE:
-//                                    drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
+                                    drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case RECTANGLE_WITH_SHADOW:
+                                    //TODO: finish shadow view
                                     drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn, heightPerDay * dayRow, widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1), shadowPaint);
                                     break;
                                 case SQUARE:
-                                    if (!(targetHeight > 0))
-                                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
-                                                widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
-                                    else {
+                                    if (!(targetHeight > 0)) {
+//                                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+//                                                widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        if (heightPerDay >= widthPerDay) {
+                                            drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+                                                    widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        } else {
+                                            drawRectangleIndicator(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
+                                                    heightPerDay * dayRow,
+                                                    widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2), heightPerDay * (dayRow + 1), shadowPaint);
+                                        }
+                                    } else {
                                         if (heightPerDay >= widthPerDay) {
                                             drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
                                                     widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
@@ -674,19 +737,47 @@ class ITSCustomCalendarController {
                                     }
                                     break;
                                 case DOUBLE_SQUARE:
-                                    //
+                                    if (!(targetHeight > 0)) {
+//                                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+//                                                widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        if (heightPerDay >= widthPerDay) {
+                                            drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+                                                    widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        } else {
+                                            drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
+                                                    heightPerDay * dayRow,
+                                                    widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2), heightPerDay * (dayRow + 1), shadowPaint);
+                                        }
+                                    } else {
+                                        if (heightPerDay >= widthPerDay) {
+                                            drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+                                                    widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        } else {
+                                            drawDoubleRectangleIndicator(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
+                                                    heightPerDay * dayRow,
+                                                    widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2), heightPerDay * (dayRow + 1), shadowPaint);
+                                        }
+                                    }
                                     break;
                                 case SQUARE_WITH_SHADOW:
                                     //TODO: finish shadow view
-                                    if (!(targetHeight > 0))
-                                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
-                                                widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
-                                    else {
+                                    if (!(targetHeight > 0)) {
+//                                        drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+//                                                widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
                                         if (heightPerDay >= widthPerDay) {
-                                            drawRectangleIndicator(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+                                            drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
                                                     widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
                                         } else {
-                                            drawRectangleIndicator(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
+                                            drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
+                                                    heightPerDay * dayRow,
+                                                    widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2), heightPerDay * (dayRow + 1), shadowPaint);
+                                        }
+                                    } else {
+                                        if (heightPerDay >= widthPerDay) {
+                                            drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn, heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2),
+                                                    widthPerDay * (dayColumn + 1), heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2), shadowPaint);
+                                        } else {
+                                            drawRectangleIndicatorWithShadow(canvas, widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2),
                                                     heightPerDay * dayRow,
                                                     widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2), heightPerDay * (dayRow + 1), shadowPaint);
                                         }
@@ -695,17 +786,15 @@ class ITSCustomCalendarController {
                                 case STAR:
                                     drawStarIndicator(canvas, dayColumn, dayRow, shadowPaint);
                                     break;
-//                                case STAR_WITH_SHADOW:
-//                                    //drawStarIndicatorWithShadow(canvas, circleRadius, cx, cy, paint);
-//                                    break;
                                 case HEXAGON:
-                                    //drawStarIndicator(canvas, circleRadius, cx, cy, paint);
+                                    drawHexagonIndicator(canvas, dayColumn, dayRow, shadowPaint);
                                     break;
                                 case OCTAGON:
-                                    //drawStarIndicator(canvas, circleRadius, cx, cy, paint);
+                                    drawOctagonIndicator(canvas, dayColumn, dayRow, shadowPaint);
                                     break;
                                 case UNDERLINED:
-                                    drawRectangleIndicator(canvas, widthPerDay * dayColumn, yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 2f), widthPerDay * (dayColumn + 1), yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 5f), shadowPaint);
+                                    //drawRectangleIndicator(canvas, widthPerDay * dayColumn, yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 2f), widthPerDay * (dayColumn + 1), yPosition + textHeight / 2 + Calculations.getPxFromDp(context, 5f), shadowPaint);
+                                    drawUnderlinedIndicator(canvas, widthPerDay * dayColumn, yPosition + (heightPerDay * (dayRow + 1) - yPosition) / 2, widthPerDay * (dayColumn + 1), yPosition + (heightPerDay * (dayRow + 1) - yPosition) / 2 + Calculations.getPxFromDp(context, 3f), shadowPaint);
                                     break;
                                 default:
                                     drawCircleIndicator(canvas, widthPerDay, xPosition, yPosition, shadowPaint);
@@ -744,17 +833,18 @@ class ITSCustomCalendarController {
                     canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
 
                     //Custom drawing day column
-                    if (weekDay > 0) {
-                        int selectedColumn = getDayColumn(weekDay);
-                        if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
-                            if (shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
-                                dayPaint.setColor(customDayColumnColor);
+                    if (weekDays != null && weekDays.length > 0) {
+                        for (int i = 0; i < weekDays.length; i++) {
+                            int selectedColumn = getDayColumn(weekDays[i]);
+                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
+                                if (shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
+                                    dayPaint.setColor(customDayColumnColor);
+                                } else {
+                                    dayPaint.setColor(currentDateTextColor);
+                                }
                             } else {
-                                dayPaint.setColor(currentDateTextColor);
+                                dayPaint.setColor(customDayColumnColor);
                             }
-                        } else {
-                            dayPaint.setColor(customDayColumnColor);
-                        }
 //                            if (isSameYearAsToday && isSameMonthAsToday && todayDayOfMonth == day) {
 //                        dayPaint.setColor(customDayColumnColor);
 //                            } else {
@@ -763,11 +853,13 @@ class ITSCustomCalendarController {
 //                        } else {
 //                            dayPaint.setColor(currentDateTextColor);
 //                        }
-                        if (dayColumn == selectedColumn) {
-                            canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
+                            if (dayColumn == selectedColumn) {
+                                canvas.drawText(String.valueOf(day), xPosition, yPosition, dayPaint);
+                            }
                         }
                         dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
                     }
+                    dayPaint.setColor(calendarWeekDaysTextColor); //Reset color
 
                     dayPaint.setTypeface(Typeface.DEFAULT); //Reset typeface
                 }
@@ -775,6 +867,101 @@ class ITSCustomCalendarController {
             canvas.save();
         }
         canvas.restore();
+    }
+
+    private void drawEvents(Canvas canvas, Calendar monthForDrawCal, int offset) {
+        int currentMonth = monthForDrawCal.get(Calendar.MONTH);
+        List<Events> uniqEvents = eventsOperations.getEventsForMonthAndYear(currentMonth, monthForDrawCal.get(Calendar.YEAR));
+
+        boolean shouldDrawCurrentDayCircle = currentMonth == todayCalendar.get(Calendar.MONTH);
+        boolean shouldDrawSelectedDayCircle = currentMonth == currentCalendar.get(Calendar.MONTH);
+
+        int todayDayOfMonth = todayCalendar.get(Calendar.DAY_OF_MONTH);
+        int currentYear = todayCalendar.get(Calendar.YEAR);
+        int selectedDayOfMonth = currentCalendar.get(Calendar.DAY_OF_MONTH);
+        float indicatorOffset = bigCircleIndicatorRadius / 2;
+        if (uniqEvents != null) {
+            for (int i = 0; i < uniqEvents.size(); i++) {
+                Events events = uniqEvents.get(i);
+                long timeMillis = events.getEventTimeInMillis();
+                eventsCalendar.setTimeInMillis(timeMillis);
+
+                int dayOfWeek = getDayOfWeek(eventsCalendar);
+                if (isRtl) {
+                    dayOfWeek = 6 - dayOfWeek;
+                }
+
+                int weekNumberForMonth = eventsCalendar.get(Calendar.WEEK_OF_MONTH);
+                float xPosition = widthPerDay * dayOfWeek + paddingWidth + paddingLeft + accumulatedScrollOffset.x + offset - paddingRight;
+                float yPosition = weekNumberForMonth * heightPerDay + paddingHeight;
+
+//                if (((animationStatus == EXPOSE_CALENDAR_ANIMATION || animationStatus == ANIMATE_INDICATORS) && xPosition >= growFactor ) || yPosition >= growFactor) {
+//                    // only draw small event indicators if enough of the calendar is exposed
+//                    continue;
+//                } else if (animationStatus == EXPAND_COLLAPSE_CALENDAR && yPosition >= growFactor){
+//                    // expanding animation, just draw event indicators if enough of the calendar is visible
+//                    continue;
+//                } else if (animationStatus == EXPOSE_CALENDAR_ANIMATION && (eventIndicatorStyle == FILL_LARGE_INDICATOR || eventIndicatorStyle == NO_FILL_LARGE_INDICATOR)) {
+//                    // Don't draw large indicators during expose animation, until animation is done
+//                    continue;
+//                }
+
+                List<Event> eventsList = events.getEventsList();
+                int dayOfMonth = eventsCalendar.get(Calendar.DAY_OF_MONTH);
+                int eventYear = eventsCalendar.get(Calendar.YEAR);
+                boolean isSameDayAsCurrentDay = shouldDrawCurrentDayCircle && (todayDayOfMonth == dayOfMonth) && (eventYear == currentYear);
+                boolean isCurrentSelectedDay = shouldDrawSelectedDayCircle && (selectedDayOfMonth == dayOfMonth);
+
+//                if (shouldDrawIndicatorsBelowSelectedDays || (!shouldDrawIndicatorsBelowSelectedDays && !isSameDayAsCurrentDay && !isCurrentSelectedDay) || animationStatus == EXPOSE_CALENDAR_ANIMATION) {
+//                    if (eventIndicatorStyle == FILL_LARGE_INDICATOR || eventIndicatorStyle == NO_FILL_LARGE_INDICATOR) {
+//                        if (!eventsList.isEmpty()) {
+//                            Event event = eventsList.get(0);
+//                            drawEventIndicatorCircle(canvas, xPosition, yPosition, event.getColor());
+//                        }
+//                    } else {
+//                        yPosition += indicatorOffset;
+//                        // offset event indicators to draw below selected day indicators
+//                        // this makes sure that they do no overlap
+//                        if (shouldDrawIndicatorsBelowSelectedDays && (isSameDayAsCurrentDay || isCurrentSelectedDay)) {
+//                            yPosition += indicatorOffset;
+//                        }
+//
+//                        if (eventsList.size() >= 3) {
+//                            drawEventsWithPlus(canvas, xPosition, yPosition, eventsList);
+//                        } else if (eventsList.size() == 2) {
+//                            drawTwoEvents(canvas, xPosition, yPosition, eventsList);
+//                        } else if (eventsList.size() == 1) {
+//                            drawSingleEvent(canvas, xPosition, yPosition, eventsList);
+//                        }
+//                    }
+//                }
+
+                drawSingleEvent(canvas, xPosition, yPosition, eventsList);
+            }
+        }
+    }
+
+    private void drawSingleEvent(Canvas canvas, float xPosition, float yPosition, List<Event> eventsList) {
+        Event event = eventsList.get(0);
+        drawEventIndicatorCircle(canvas, xPosition, yPosition, event.getEventColor());
+    }
+
+    private void drawEventIndicatorCircle(Canvas canvas, float x, float y, int color) {
+        dayPaint.setColor(color);
+//        drawCircle(canvas, bigCircleIndicatorRadius, x, y);
+//        if (eventIndicatorStyle == SMALL_INDICATOR) {
+//            dayPaint.setStyle(Paint.Style.FILL);
+        drawCircle(canvas, smallIndicatorRadius, x, y);
+//        } else if (eventIndicatorStyle == NO_FILL_LARGE_INDICATOR){
+//            dayPaint.setStyle(Paint.Style.STROKE);
+//            drawDayCircleIndicator(NO_FILL_LARGE_INDICATOR, canvas, x, y, color);
+//        } else if (eventIndicatorStyle == FILL_LARGE_INDICATOR) {
+//            drawDayCircleIndicator(FILL_LARGE_INDICATOR, canvas, x, y, color);
+//        }
+    }
+
+    private void drawCircle(Canvas canvas, float radius, float x, float y) {
+        canvas.drawCircle(x, y, radius, dayPaint);
     }
 
     private void resetTextHeight(Paint paint, String text) {
@@ -995,7 +1182,135 @@ class ITSCustomCalendarController {
                     }
             }
         } else {
-            return 0;
+            //RTL LAYOUT
+            switch (firstDayOfWeekToDraw) {
+                case 1:
+                    //First day is Sunday
+                    switch (selectedDay) {
+                        case 1:
+                            return 6;
+                        case 2:
+                            return 5;
+                        case 3:
+                            return 4;
+                        case 4:
+                            return 3;
+                        case 5:
+                            return 2;
+                        case 6:
+                            return 1;
+                        case 7:
+                            return 0;
+                    }
+                case 2:
+                    //First day is Monday
+                    switch (selectedDay) {
+                        case 1:
+                            return 0;
+                        case 2:
+                            return 6;
+                        case 3:
+                            return 5;
+                        case 4:
+                            return 4;
+                        case 5:
+                            return 3;
+                        case 6:
+                            return 2;
+                        case 7:
+                            return 1;
+                    }
+                case 3:
+                    //First day is Tuesday
+                    switch (selectedDay) {
+                        case 1:
+                            return 1;
+                        case 2:
+                            return 0;
+                        case 3:
+                            return 6;
+                        case 4:
+                            return 5;
+                        case 5:
+                            return 4;
+                        case 6:
+                            return 3;
+                        case 7:
+                            return 2;
+                    }
+                case 4:
+                    //First day is Wednesday
+                    switch (selectedDay) {
+                        case 1:
+                            return 2;
+                        case 2:
+                            return 1;
+                        case 3:
+                            return 0;
+                        case 4:
+                            return 6;
+                        case 5:
+                            return 5;
+                        case 6:
+                            return 4;
+                        case 7:
+                            return 3;
+                    }
+                case 5:
+                    //First day is Thursday
+                    switch (selectedDay) {
+                        case 1:
+                            return 3;
+                        case 2:
+                            return 2;
+                        case 3:
+                            return 1;
+                        case 4:
+                            return 0;
+                        case 5:
+                            return 6;
+                        case 6:
+                            return 5;
+                        case 7:
+                            return 4;
+                    }
+                case 6:
+                    //First day is Friday
+                    switch (selectedDay) {
+                        case 1:
+                            return 4;
+                        case 2:
+                            return 3;
+                        case 3:
+                            return 2;
+                        case 4:
+                            return 1;
+                        case 5:
+                            return 0;
+                        case 6:
+                            return 6;
+                        case 7:
+                            return 5;
+                    }
+                case 7:
+                    //First day is Saturday
+                    switch (selectedDay) {
+                        case 1:
+                            return 5;
+                        case 2:
+                            return 4;
+                        case 3:
+                            return 3;
+                        case 4:
+                            return 2;
+                        case 5:
+                            return 1;
+                        case 6:
+                            return 0;
+                        case 7:
+                            return 6;
+                    }
+            }
         }
 
         return 0;
@@ -1008,6 +1323,7 @@ class ITSCustomCalendarController {
 
     //Draws 3d effect shadow on calendar
     private void draw3DEffect(Canvas canvas, Paint paint, String day, float xPosition, float yPosition) {
+        //TODO: Calculate shadow offset according to phone
         if (paint == null)
             paint = new Paint();
 
@@ -1060,21 +1376,31 @@ class ITSCustomCalendarController {
         canvas.drawCircle(cx, cy, circleRadius / 2, paint);
     }
 
-    //Draws circle shape indicator on canvas
+    //Draws double circle shape indicator on canvas
     private void drawDoubleCircleIndicator(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-//        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
+        //TODO: ispraviti za pune boje
+
+        float shadowOffset = circleRadius * 0.04f;
+        float centerCircleOffset = circleRadius * 0.05f;
+
+//        paint.setColor(calendarDatesTextColor);
+        paint.setColor(currentDayIndicatorColor);
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.1f));
+        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
+
+        //Shadow circle
+        paint.setColor(currentDayIndicatorColor);
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.25f));
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - Calculations.getPxFromDp(context, 7.5f), paint);
+        canvas.drawCircle(cx, cy, circleRadius / 2 - Calculations.getPxFromDp(context, shadowOffset), paint);
+
+        paint.setColor(currentDayIndicatorColor);
+//        canvas.drawCircle(cx, cy, circleRadius / 2 - Calculations.getPxFromDp(context, 8f), paint);
+        canvas.drawCircle(cx, cy, circleRadius / 2 - Calculations.getPxFromDp(context, centerCircleOffset), paint);
     }
 
     //Draws circle shape indicator with shadow on canvas
     private void drawCircleIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.3));
-//        canvas.drawCircle(cx, cy, circleRadius / 2, paint);
-//        paint.setColor(currentDayIndicatorColor);
-//        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.15));
-//        canvas.drawCircle(cx, cy, circleRadius / 2 - 5, paint);
-//        paint.setColor(currentDayIndicatorColor);
-//        canvas.drawCircle(cx, cy, circleRadius / 2 - 10, paint);
-
         for (float i = 10, j = 0.4f; i > 0; i--, j -= 0.05) {
             paint.setColor(currentDayIndicatorColor);
             paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), j));
@@ -1090,9 +1416,38 @@ class ITSCustomCalendarController {
         canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
     }
 
-    //Draws rectangle shape indicator on canvas
+    //Draws double rectangle shape indicator on canvas
     private void drawDoubleRectangleIndicator(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
+        //TODO: ispraviti za pune boje
+
+        float shadowOffset, centerRectOffset,
+                shadowMultiplier = 0.06f, centerRectMultiplier = 0.07f;
+
+        if (widthPerDay < heightPerDay) {
+            shadowOffset = (end_x - start_x) * shadowMultiplier;
+            centerRectOffset = (end_x - start_x) * centerRectMultiplier;
+        } else {
+            shadowOffset = (end_y - start_y) * shadowMultiplier;
+            centerRectOffset = (end_y - start_y) * centerRectMultiplier;
+        }
+
+        paint.setColor(currentDayIndicatorColor);
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.1f));
         canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
+
+        paint.setColor(currentDayIndicatorColor);
+        paint.setColor(ColorUtil.getDarkerColor(paint.getColor(), 0.25f));
+
+//        canvas.drawRect(new RectF(start_x + Calculations.getPxFromDp(context, 7.5f), start_y + Calculations.getPxFromDp(context, 7.5f),
+//                end_x - Calculations.getPxFromDp(context, 7.5f), end_y - Calculations.getPxFromDp(context, 7.5f)), paint);
+        canvas.drawRect(new RectF(start_x + Calculations.getPxFromDp(context, shadowOffset), start_y + Calculations.getPxFromDp(context, shadowOffset),
+                end_x - Calculations.getPxFromDp(context, shadowOffset), end_y - Calculations.getPxFromDp(context, shadowOffset)), paint);
+
+        paint.setColor(currentDayIndicatorColor);
+//        canvas.drawRect(new RectF(start_x + Calculations.getPxFromDp(context, 8f), start_y + Calculations.getPxFromDp(context, 8f),
+//                end_x - Calculations.getPxFromDp(context, 8f), end_y - Calculations.getPxFromDp(context, 8f)), paint);
+        canvas.drawRect(new RectF(start_x + Calculations.getPxFromDp(context, centerRectOffset), start_y + Calculations.getPxFromDp(context, centerRectOffset),
+                end_x - Calculations.getPxFromDp(context, centerRectOffset), end_y - Calculations.getPxFromDp(context, centerRectOffset)), paint);
     }
 
     //Draws rectangle shape indicator with shadow on canvas
@@ -1185,18 +1540,127 @@ class ITSCustomCalendarController {
             path.moveTo(x + x * 0.26f, y + y * 0.067f);
 
             path.close();
-            canvas.drawPath(path, shadowPaint);
+            canvas.drawPath(path, paint);
         }
     }
 
-    //Draws star shape indicator with shadow on canvas
-//    private void drawStarIndicatorWithShadow(Canvas canvas, float circleRadius, float cx, float cy, Paint paint) {
-//        //TODO: change method attributes
-//    }
+    private void drawHexagonIndicator(Canvas canvas, int dayColumn, int dayRow, Paint paint) {
+        if (path == null)
+            path = new Path();
+
+        float start_x, start_y, end_x, end_y;
+        float center_x, center_y;
+        float widthSection, heightSection;
+
+        if (!(targetHeight > 0)) {
+            if (heightPerDay >= widthPerDay) {
+                start_x = widthPerDay * dayColumn;
+                start_y = heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+                end_x = widthPerDay * (dayColumn + 1);
+                end_y = heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+            } else {
+                start_x = widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                start_y = heightPerDay * dayRow;
+                end_x = widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                end_y = heightPerDay * (dayRow + 1);
+            }
+        } else {
+            if (heightPerDay >= widthPerDay) {
+                start_x = widthPerDay * dayColumn;
+                start_y = heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+                end_x = widthPerDay * (dayColumn + 1);
+                end_y = heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+            } else {
+                start_x = widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                start_y = heightPerDay * dayRow;
+                end_x = widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                end_y = heightPerDay * (dayRow + 1);
+            }
+        }
+
+        center_x = start_x + (end_x - start_x) / 2;
+        center_y = start_y + (end_y - start_y) / 2;
+
+        double aHalf = Math.sqrt((Math.pow((center_y - start_y) / Math.cos(Math.PI / 6), 2)) - Math.pow(center_y - start_y, 2));
+        float a = (float) aHalf * 2;
+
+        //z * 2 + a = widthPerDay
+        float z = ((end_x - start_x) - a) / 2;
+
+        path.moveTo(start_x + z, start_y);
+        path.lineTo(start_x + z + a, start_y);
+        path.lineTo(end_x, center_y);
+        path.lineTo(end_x - z, end_y);
+        path.lineTo(start_x + z, end_y);
+        path.lineTo(start_x, center_y);
+        path.lineTo(start_x + z, start_y);
+        path.close();
+
+//        float radius = (float) ((center_y - start_y) / Math.cos(Math.PI / 6));
+//        canvas.drawCircle(center_x, center_y, radius, shadowPaint);
+
+        canvas.drawPath(path, paint);
+    }
+
+    private void drawOctagonIndicator(Canvas canvas, int dayColumn, int dayRow, Paint paint) {
+        if (path == null)
+            path = new Path();
+
+        float start_x, start_y, end_x, end_y;
+        float widthSection, heightSection;
+        float center_x, center_y;
+
+        if (!(targetHeight > 0)) {
+            if (heightPerDay >= widthPerDay) {
+                start_x = widthPerDay * dayColumn;
+                start_y = heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+                end_x = widthPerDay * (dayColumn + 1);
+                end_y = heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+            } else {
+                start_x = widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                start_y = heightPerDay * dayRow;
+                end_x = widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                end_y = heightPerDay * (dayRow + 1);
+            }
+        } else {
+            if (heightPerDay >= widthPerDay) {
+                start_x = widthPerDay * dayColumn;
+                start_y = heightPerDay * dayRow + (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+                end_x = widthPerDay * (dayColumn + 1);
+                end_y = heightPerDay * (dayRow + 1) - (((heightPerDay * (dayRow + 1) - heightPerDay * dayRow) - (widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn)) / 2);
+            } else {
+                start_x = widthPerDay * dayColumn + (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                start_y = heightPerDay * dayRow;
+                end_x = widthPerDay * (dayColumn + 1) - (((widthPerDay * (dayColumn + 1) - widthPerDay * dayColumn) - heightPerDay) / 2);
+                end_y = heightPerDay * (dayRow + 1);
+            }
+        }
+
+        widthSection = (end_x - start_x) / 3;
+        heightSection = (end_y - start_y) / 3;
+        center_x = start_x + (end_x - start_x) / 2;
+        center_y = start_y + (end_y - start_y) / 2;
+
+//        path.moveTo(center_x, center_y);
+//        path.lineTo(end_x, );
+
+        path.moveTo(start_x + widthSection, start_y);       //0
+        path.lineTo(start_x + widthSection * 2, start_y);   //1
+        path.lineTo(end_x, start_y + heightSection);        //2
+        path.lineTo(end_x, start_y + heightSection * 2);    //3
+        path.lineTo(end_x - widthSection, end_y);           //4
+        path.lineTo(end_x - widthSection * 2, end_y);       //5
+        path.lineTo(start_x, end_y - heightSection);        //6
+        path.lineTo(start_x, start_y + heightSection);      //7
+        path.lineTo(start_x + widthSection, start_y);       //8 (0)
+        path.close();
+
+        canvas.drawPath(path, paint);
+    }
 
     //Draws underline shape indicator on canvas
     private void drawUnderlinedIndicator(Canvas canvas, float start_x, float start_y, float end_x, float end_y, Paint paint) {
-        canvas.drawLine(start_x, start_y, end_x, end_y, paint);
+        canvas.drawRect(new RectF(start_x, start_y, end_x, end_y), paint);
     }
 
     private int computeVelocity() {
@@ -1217,6 +1681,7 @@ class ITSCustomCalendarController {
         }
         this.locale = locale;
         this.timeZone = timeZone;
+        this.eventsOperations = new EventsOperations(Calendar.getInstance(this.timeZone, this.locale));
         // passing null will not re-init density related values - and that's ok
         init(null);
     }
@@ -1248,6 +1713,7 @@ class ITSCustomCalendarController {
         todayCalendar.setFirstDayOfWeek(dayOfWeek);
         currentCalendar.setFirstDayOfWeek(dayOfWeek);
         previousMonthCalendar.setFirstDayOfWeek(dayOfWeek);
+        eventsCalendar.setFirstDayOfWeek(dayOfWeek);
     }
 
     boolean computeScroll() {
@@ -1556,6 +2022,38 @@ class ITSCustomCalendarController {
         System.out.println("test");
     }
 
+    void removeAllEvents() {
+        eventsOperations.removeAllEvents();
+    }
+
+    void addEvent(Event event) {
+        eventsOperations.addEvent(event);
+    }
+
+    void addEvents(List<Event> events) {
+        eventsOperations.addEvents(events);
+    }
+
+    List<Event> getCalendarEventsFor(long epochMillis) {
+        return eventsOperations.getEventsFor(epochMillis);
+    }
+
+    List<Event> getCalendarEventsForMonth(long epochMillis) {
+        return eventsOperations.getEventsForMonth(epochMillis);
+    }
+
+    void removeEventsFor(long epochMillis) {
+        eventsOperations.removeEventByEpochMillis(epochMillis);
+    }
+
+    void removeEvent(Event event) {
+        eventsOperations.removeEvent(event);
+    }
+
+    void removeEvents(List<Event> events) {
+        eventsOperations.removeEvents(events);
+    }
+
     void showParallaxEffect(boolean showParallaxEffect) {
         this.showParallaxEffect = showParallaxEffect;
     }
@@ -1647,8 +2145,8 @@ class ITSCustomCalendarController {
     //********************************************************************************
     //<Current day column params>
 
-    void setWeekDayForCustomizeItsColumn(int weekDay) {
-        this.weekDay = weekDay;
+    void setWeekDaysForCustomizeItsColumn(int[] weekDays) {
+        this.weekDays = weekDays;
     }
 
     //Color for custom day column
@@ -1670,5 +2168,35 @@ class ITSCustomCalendarController {
     }
 
     //</Current day column params>
+    //--------------------------------------------------------------------------------
+
+
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<EVENTS>
+    //TODO: Zavrsiti sekciju
+
+    void setEventIndicatorShapeStyle(EventTypeShapes eventTypeShape) {
+
+    }
+
+    void setEventIndicatorPaintStyle(Paint.Style paintStyle) {
+
+    }
+
+    void setEventCalendarDatesTextColor(int eventCalendarDatesTextColor) {
+
+    }
+
+    void setEventIndicatorShapePrimaryColor(int eventIndicatorShapePrimaryColor) {
+
+    }
+
+    void setEventIndicatorShapeSecondaryColor(int eventIndicatorShapeSecondaryColor) {
+
+    }
+
+    //</EVENTS>
     //--------------------------------------------------------------------------------
 }

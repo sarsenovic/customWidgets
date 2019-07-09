@@ -8,14 +8,14 @@
 
     <color name="red">#FF0000</color>
     <color name="white">#FFF</color>
-    <color name="white_alpha">#32FFFFFF</color>
+    <color name="white_alpha">#CCFFFFFF</color>
     <color name="green">#00FF00</color>
     <color name="blue">#0000FF</color>
     <color name="black">#000</color>
     <color name="yellow">#FFFF00</color>
     <color name="light_yellow">#FFFFA2</color>
     <color name="cyan">#00FFFF</color>
-    <color name="gray">#e6e6e6</color>
+    <color name="gray">#B9B9B9</color>
     <color name="gray_dark">#4f4f4f</color>
     <color name="midnight_blue">#247B88</color>
     <color name="purple_dark">#0E1335</color>
@@ -24,5 +24,5 @@
 
     <color name="custom_purple">#A22EA7</color>
     <color name="orange">#FF9800</color>
-    <color name="red_light">#FF5E5E</color>
+    <color name="red_light">#FF4D4D</color>
 </resources>

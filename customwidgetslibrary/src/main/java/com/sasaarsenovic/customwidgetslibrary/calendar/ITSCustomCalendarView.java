@@ -15,7 +15,11 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.OverScroller;
 
+import com.sasaarsenovic.customwidgetslibrary.calendar.event.Event;
+
+import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -87,7 +91,7 @@ public class ITSCustomCalendarView extends View {
         super(context, attrs);
         itsCustomCalendarController = new ITSCustomCalendarController(getContext(), Locale.getDefault(), TimeZone.getDefault(), attrs, new OverScroller(getContext()),
                 new Paint(), new Rect(), Color.argb(255, 233, 84, 81), Color.argb(255, 219, 219, 219),
-                Color.argb(255, 64, 64, 64), VelocityTracker.obtain());
+                Color.argb(255, 64, 64, 64), VelocityTracker.obtain(), new EventsOperations(Calendar.getInstance()));
         gestureDetector = new GestureDetectorCompat(getContext(), gestureListener);
         setLayerType(LAYER_TYPE_SOFTWARE, null);
     }
@@ -96,7 +100,7 @@ public class ITSCustomCalendarView extends View {
         super(context, attrs, defStyleAttr);
         itsCustomCalendarController = new ITSCustomCalendarController(getContext(), Locale.getDefault(), TimeZone.getDefault(), attrs, new OverScroller(getContext()),
                 new Paint(), new Rect(), Color.argb(255, 233, 84, 81), Color.argb(255, 219, 219, 219),
-                Color.argb(255, 64, 64, 64), VelocityTracker.obtain());
+                Color.argb(255, 64, 64, 64), VelocityTracker.obtain(), new EventsOperations(Calendar.getInstance()));
         gestureDetector = new GestureDetectorCompat(getContext(), gestureListener);
         setLayerType(LAYER_TYPE_SOFTWARE, null);
     }
@@ -435,6 +439,33 @@ public class ITSCustomCalendarView extends View {
     //<Current day column params>
 
     //Select week day to customize column for that day
+    public void setWeekDaysForCustomizeItsColumn(int[] weekDays) {
+        itsCustomCalendarController.setWeekDaysForCustomizeItsColumn(weekDays);
+    }
+
+    //Color for customDayColumn
+    public void setCustomDayColumnColor(int customDayColumnColor) {
+        itsCustomCalendarController.setCustomDayColumnColor(customDayColumnColor);
+    }
+
+    //True for paint otherMonth dates in customDayColumnColor, false for otherMonthDaysColor
+    public void shouldPaintCustomDayColumnColorForOtherMonthDays(boolean shouldPaintCustomDayColumnForOtherMonthDays) {
+        itsCustomCalendarController.shouldPaintCustomDayColumnColorForOtherMonthDays(shouldPaintCustomDayColumnForOtherMonthDays);
+    }
+
+    //True for paint custom column day name in customDayColumnColor, false for colorForWeekendDays
+    public void shouldPaintCustomDayColumnColorForDayName(boolean shouldPaintCustomDayColumnColorForDayName) {
+        itsCustomCalendarController.shouldPaintCustomDayColumnColorForDayName(shouldPaintCustomDayColumnColorForDayName);
+    }
+
+    //True for paint current day in selected customized column in customDayColumnColor, false for currentDateTextColor
+    public void setShouldPaintCurrentDayForSelectedCustomizableDayColumn(boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
+        itsCustomCalendarController.setShouldPaintCurrentDayForSelectedCustomizableDayColumn(shouldPaintCurrentDayForSelectedCustomizableDayColumn);
+    }
+
+/*
+
+    //Select week day to customize column for that day
     public void setWeekDayForCustomizeItsColumn(int weekDay) {
         itsCustomCalendarController.setWeekDayForCustomizeItsColumn(weekDay);
     }
@@ -458,8 +489,147 @@ public class ITSCustomCalendarView extends View {
     public void setShouldPaintCurrentDayForSelectedCustomizableDayColumn(boolean shouldPaintCurrentDayForSelectedCustomizableDayColumn) {
         itsCustomCalendarController.setShouldPaintCurrentDayForSelectedCustomizableDayColumn(shouldPaintCurrentDayForSelectedCustomizableDayColumn);
     }
+*/
 
     //</Current day column params>
+    //--------------------------------------------------------------------------------
+
+
+    //********************************************************************************
+    //********************************************************************************
+    //********************************************************************************
+    //<EVENTS>
+
+    public void setEventIndicatorShapeStyle(EventTypeShapes eventTypeShape) {
+        itsCustomCalendarController.setEventIndicatorShapeStyle(eventTypeShape);
+    }
+
+    public void setEventIndicatorPaintStyle(Paint.Style paintStyle) {
+        itsCustomCalendarController.setEventIndicatorPaintStyle(paintStyle);
+    }
+
+    public void setEventCalendarDatesTextColor(int eventCalendarDatesTextColor) {
+        itsCustomCalendarController.setEventCalendarDatesTextColor(eventCalendarDatesTextColor);
+    }
+
+    public void setEventIndicatorShapePrimaryColor(int eventIndicatorShapePrimaryColor) {
+        itsCustomCalendarController.setEventIndicatorShapePrimaryColor(eventIndicatorShapePrimaryColor);
+    }
+
+    public void setEventIndicatorShapeSecondaryColor(int eventIndicatorShapeSecondaryColor) {
+        itsCustomCalendarController.setEventIndicatorShapeSecondaryColor(eventIndicatorShapeSecondaryColor);
+    }
+
+    public void addEvent(Event event) {
+        addEvent(event, true);
+    }
+
+    public void addEvent(Event event, boolean shouldInvalidate) {
+        itsCustomCalendarController.addEvent(event);
+        if (shouldInvalidate) {
+            invalidate();
+        }
+    }
+
+    /**
+     * Adds multiple events to the calendar and invalidates the view once all events are added.
+     */
+    public void addEvents(List<Event> events) {
+        itsCustomCalendarController.addEvents(events);
+        invalidate();
+    }
+
+
+
+    /**
+     * Fetches the events for the date passed in
+     * @param date
+     * @return
+     */
+    public List<Event> getEvents(Date date){
+        return itsCustomCalendarController.getCalendarEventsFor(date.getTime());
+    }
+
+    /**
+     * Fetches the events for the epochMillis passed in
+     * @param epochMillis
+     * @return
+     */
+    public List<Event> getEvents(long epochMillis){
+        return itsCustomCalendarController.getCalendarEventsFor(epochMillis);
+    }
+
+    /**
+     * Fetches the events for the month of the epochMillis passed in and returns a sorted list of events
+     * @param epochMillis
+     * @return
+     */
+    public List<Event> getEventsForMonth(long epochMillis){
+        return itsCustomCalendarController.getCalendarEventsForMonth(epochMillis);
+    }
+
+    /**
+     * Fetches the events for the month of the date passed in and returns a sorted list of events
+     * @param date
+     * @return
+     */
+    public List<Event> getEventsForMonth(Date date){
+        return itsCustomCalendarController.getCalendarEventsForMonth(date.getTime());
+    }
+
+    /**
+     * Remove the event associated with the Date passed in
+     * @param date
+     */
+    public void removeEvents(Date date){
+        itsCustomCalendarController.removeEventsFor(date.getTime());
+    }
+
+    public void removeEvents(long epochMillis){
+        itsCustomCalendarController.removeEventsFor(epochMillis);
+    }
+
+    /**
+     * see {@link #removeEvent(Event, boolean)} when removing single events to control if calendar should redraw
+     * or {@link #removeEvents(java.util.List)} (java.util.List)}  when removing multiple events
+     * @param event
+     */
+    public void removeEvent(Event event){
+        removeEvent(event, true);
+    }
+
+    /**
+     * Removes an event from the calendar.
+     * If removing multiple events see {@link #removeEvents(List)}
+     *
+     * @param event event to remove from the calendar
+     * @param shouldInvalidate true if the view should invalidate
+     */
+    public void removeEvent(Event event, boolean shouldInvalidate){
+        itsCustomCalendarController.removeEvent(event);
+        if(shouldInvalidate){
+            invalidate();
+        }
+    }
+
+    /**
+     * Removes multiple events from the calendar and invalidates the view once all events are added.
+     */
+    public void removeEvents(List<Event> events){
+        itsCustomCalendarController.removeEvents(events);
+        invalidate();
+    }
+
+    /**
+     * Clears all Events from the calendar.
+     */
+    public void removeAllEvents() {
+        itsCustomCalendarController.removeAllEvents();
+        invalidate();
+    }
+
+
+    //</EVENTS>
     //--------------------------------------------------------------------------------
 
     public void setDisplayOtherMonthDays(boolean displayOtherMonthDays) {
@@ -569,5 +739,6 @@ public class ITSCustomCalendarView extends View {
         //allow gesture detector onSingleTap and scroll events
         return gestureDetector.onTouchEvent(motionEvent);
     }
+
 
 }

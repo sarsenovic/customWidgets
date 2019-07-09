@@ -3,6 +3,7 @@ package com.sasaarsenovic.customwidgetslibrary.utils;
 import android.graphics.Color;
 
 public class ColorUtil {
+
     public static int getDarkerColor(int color, double multiplier) {
         //veci multiplier daje tamniju boju
         int redColor = Color.red(color);
@@ -36,6 +37,6 @@ public class ColorUtil {
     }
 
     private static int lighterColor(int color, double multiplier) {
-        return (int) Math.min(color + (color * multiplier), 255);
+            return (int) Math.min(color + (color * multiplier), 255);
     }
 }
