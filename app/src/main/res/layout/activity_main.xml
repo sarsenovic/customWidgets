@@ -51,7 +51,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.sasaarsenovic.customwidgetslibrary.calendar.ITSCustomCalendarView
+        <com.example.testcustomwidgetslibrary.calendar.ITSCustomCalendarView
             android:id="@+id/its_calendar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
