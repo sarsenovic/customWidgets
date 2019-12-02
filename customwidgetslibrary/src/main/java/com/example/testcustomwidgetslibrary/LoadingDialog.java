@@ -22,6 +22,7 @@ public class LoadingDialog {
      * 1 for STYLE_HORIZONTAL
      */
     private int loadingProgressStyle;
+    private LoadingDialogProgressStyleEnum loadingProgressStyleEnum;
 
     public LoadingDialog() {
     }
@@ -62,6 +63,15 @@ public class LoadingDialog {
         this.cancelableOnTouchOutside = cancelableOnTouchOutside;
     }
 
+    public LoadingDialog(String message, boolean dismissOnBackClick, int style, LoadingDialogProgressStyleEnum loadingProgressStyleEnum, boolean cancelableOnTouchOutside, boolean cancelable) {
+        this.message = message;
+        this.dismissOnBackClick = dismissOnBackClick;
+        this.style = style;
+        this.loadingProgressStyleEnum = loadingProgressStyleEnum;
+        this.cancelable = cancelable;
+        this.cancelableOnTouchOutside = cancelableOnTouchOutside;
+    }
+
     public void show(Context context) {
         if (style == 0) {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
@@ -86,12 +96,27 @@ public class LoadingDialog {
             }
         });
 
-        if (loadingProgressStyle == 0) {
-            dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        } else if (loadingProgressStyle == 1) {
-            dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        if (loadingProgressStyleEnum != null) {
+            switch (loadingProgressStyleEnum) {
+                case STYLE_SPINNER:
+                    dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                    break;
+                case STYLE_HORIZONTAL:
+                    dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                    break;
+                default:
+                    dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+                    break;
+
+            }
         } else {
-            dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            if (loadingProgressStyle == 0) {
+                dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            } else if (loadingProgressStyle == 1) {
+                dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            } else {
+                dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            }
         }
 
         if (message == null) {

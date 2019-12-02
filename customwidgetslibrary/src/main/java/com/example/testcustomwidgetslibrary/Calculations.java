@@ -37,6 +37,8 @@ public class Calculations {
                 return (9 * parameterForEdit) / 16;
             } else if (aspectRatio.equals("21") || aspectRatio.equals("2:1")) {
                 return parameterForEdit / 2;
+            } else if (aspectRatio.equals("3129") || aspectRatio.equals("31:29")) {
+                return (29 * parameterForEdit) / 31;
             }
         } else {
             return 0;
