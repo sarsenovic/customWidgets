@@ -57,6 +57,8 @@
     <declare-styleable name="CustomImageView">
         <attr name="aspectRatio" />
         <attr name="fixedParam" />
+        <attr name="aspectWidth" format="integer" />
+        <attr name="aspectHeight" format="integer" />
         <!--<attr name="customHorizontalRatio" format="integer" />-->
         <!--<attr name="customVerticalRatio" format="integer" />-->
     </declare-styleable>

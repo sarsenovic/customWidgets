@@ -37,14 +37,27 @@ public class CustomImageView extends ImageView {
                     if (calculations.getFixedParam().equals("0")) {
                         //width is fixed
 //                        height = ratioCalculation(calculations.getAspectRatio(), width);
-                        height = calculations.ratioCalculation(calculations.getAspectRatio(), width);
+                        height = calculations.ratioCalculation(calculations.getAspectRatio(), width, 0, 0);
                     } else if (calculations.getFixedParam().equals("1")) {
                         //height is fixed
-                        width = calculations.ratioCalculation(calculations.getAspectRatio(), height);
+                        width = calculations.ratioCalculation(calculations.getAspectRatio(), height, 0, 0);
                     }
                 } else {
                     //Default, width is fixed
-                    height = calculations.ratioCalculation(calculations.getAspectRatio(), width);
+                    height = calculations.ratioCalculation(calculations.getAspectRatio(), width, 0, 0);
+                }
+            } else if (calculations.getAspectWidth() > -1 && calculations.getAspectHeight() > -1) {
+                if (calculations.getFixedParam() != null && !calculations.getFixedParam().equals("")) {
+                    if (calculations.getFixedParam().equals("0")) {
+                        //width is fixed
+                        height = calculations.ratioCalculation(null, width, calculations.getAspectWidth(), calculations.getAspectHeight());
+                    } else if (calculations.getFixedParam().equals("1")) {
+                        //height is fixed
+                        width = calculations.ratioCalculation(null, height, calculations.getAspectWidth(), calculations.getAspectHeight());
+                    }
+                } else {
+                    //Default, width is fixed
+                    height = calculations.ratioCalculation(null, width, calculations.getAspectWidth(), calculations.getAspectHeight());
                 }
             }
         }

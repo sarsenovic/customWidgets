@@ -10,6 +10,8 @@ import com.example.testcustomwidgetslibrary.R;
 public class Calculations {
     private String aspectRatio;
     private String fixedParam;
+    private int aspectWidth;
+    private int aspectHeight;
 
     public void checkScalingType(Context context, AttributeSet attributeSet) {
         if (attributeSet != null) {
@@ -21,6 +23,8 @@ public class Calculations {
             try {
                 aspectRatio = typedArray.getString(R.styleable.CustomImageView_aspectRatio);
                 fixedParam = typedArray.getString(R.styleable.CustomImageView_fixedParam);
+                aspectWidth = typedArray.getInt(R.styleable.CustomImageView_aspectWidth, -1);
+                aspectHeight = typedArray.getInt(R.styleable.CustomImageView_aspectHeight, -1);
 //                customHorizontalRatio = typedArray.getInt(R.styleable.CustomImageView_customHorizontalRatio, 0);
 //                customVerticalRatio = typedArray.getInt(R.styleable.CustomImageView_customVerticalRatio, 0);
             } finally {
@@ -29,7 +33,7 @@ public class Calculations {
         }
     }
 
-    public int ratioCalculation(String aspectRatio, int parameterForEdit) {
+    public int ratioCalculation(String aspectRatio, int parameterForEdit, int customWidth, int customHeight) {
         if (aspectRatio != null) {
             if (aspectRatio.equals("43") || aspectRatio.equals("4:3")) {
                 return (3 * parameterForEdit) / 4;
@@ -41,7 +45,7 @@ public class Calculations {
                 return (29 * parameterForEdit) / 31;
             }
         } else {
-            return 0;
+            return (customWidth * parameterForEdit) / customHeight;
         }
         return 0;
     }
@@ -52,6 +56,14 @@ public class Calculations {
 
     public String getFixedParam() {
         return fixedParam;
+    }
+
+    public int getAspectWidth() {
+        return aspectWidth;
+    }
+
+    public int getAspectHeight() {
+        return aspectHeight;
     }
 
     public static float getDpFromPx(Context context, float px) {
