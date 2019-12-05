@@ -26,6 +26,17 @@
         <enum name="fixed_height" value="1" />
     </attr>
 
+    <attr name="linearLayoutAspectRatio" format="enum">
+        <enum name="cetiri_prema_tri" value="43" />
+        <enum name="sesnaest_prema_devet" value="169" />
+        <enum name="dva_prema_jedan" value="21" />
+        <enum name="trideset_jedan_prema_dvadeset_devet" value="3129" />
+    </attr>
+    <attr name="linearLayoutFixedParam" format="enum">
+        <enum name="fixed_width" value="0" />
+        <enum name="fixed_height" value="1" />
+    </attr>
+
     <declare-styleable name="CustomTextView">
         <attr name="font_name" />
         <attr name="font_variant" />
@@ -61,6 +72,13 @@
         <attr name="aspectHeight" format="integer" />
         <!--<attr name="customHorizontalRatio" format="integer" />-->
         <!--<attr name="customVerticalRatio" format="integer" />-->
+    </declare-styleable>
+
+    <declare-styleable name="CustomLinearLayout">
+        <attr name="linearLayoutAspectRatio"/>
+        <attr name="linearLayoutFixedParam"/>
+        <attr name="linearLayoutAspectWidth" format="integer"/>
+        <attr name="linearLayoutAspectHeight" format="integer"/>
     </declare-styleable>
 
     <declare-styleable name="ITSCustomCalendarView">
