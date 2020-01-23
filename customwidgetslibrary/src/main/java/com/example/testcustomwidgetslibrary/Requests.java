@@ -34,6 +34,7 @@ public class Requests {
     private LoadingDialog loadingDialogInstance;
     private OkHttpClient okHttpClient;
     private RequestListener requestListenerCallback;
+    private RequestWithObjectReturnedListener requestWithObjectListenerCallback;
     private RequestUploadListener multipartFileRequestListenerCallback;
     private ANRequest.PostRequestBuilder postRequestBuilder;
     private ANRequest.GetRequestBuilder getRequestBuilder;
@@ -1040,6 +1041,204 @@ public class Requests {
                                     loge("onError " + "-> errorCode:" + String.valueOf(anError.getErrorCode()) + ", error:" + String.valueOf(anError.getErrorDetail()));
 
                                     requestListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+                            });
+                            break;
+
+                        default:
+                            ToastMessage.toaster(context, "Invalid response type");
+                            break;
+                    }
+                } else {
+                    loge("PostRequest: Type of expected response is invalid");
+                }
+            } else {
+                loge("PostRequest: URL is null");
+            }
+        } else {
+            loge("PostRequest: Context is null");
+        }
+    }
+
+
+    /**
+     * Builds a post request.
+     *
+     * @param urlString                       Url koji gadjamo.
+     * @param bodyParams                      Mapa<String, Object> parametara koji se salju.
+     * @param typeOfExpectedResponse          Naziv ocekivanog tipa response-a (JSON_OBJECT, JSON_ARRAY, STRING)
+     * @param sendAsJSON                      boolean koji je true ako podatke saljemo kao jsonObject (U ovom slucaju se bodyParams automatski konvertuju u jsonObject).
+     * @param postWithObjectCallback                    Interface za uspesno i neuspesno izvrsavanje request-a.
+     * @param showLoadingDialog               boolean koji je true ako zelimo da prikazemo loading dialog.
+     * @param loadingDialogMessage            Message which will be displayed in loading dialog
+     * @param loadingDialogStyle              Style of loading dialog (0 is for default)
+     * @param loadingDialogProgressStyleEnum  Spinner or horizontal type
+     * @param dismissLoadingDialogOnBackClick true if you want to dismiss dialog with system back click
+     * @param contentTypeString               String koji predstavlja CONTENT_TYPE u request-u (Ako se ostavi prazan ovaj parametar CONTENT_TYPE se u tom slucaju ne salje).
+     * @param headerParamsMap                 Mapa<String, String> parametara koji se salju u header-u request-a.
+     * @param model                           Objekat koji ce se vratiti u response - u radi lakseg manipulisanja ugnjezdenim listama
+     * @param tag                             String koji svaki request obelezava razlicitim imenom. (Za slucaj ako u oviru jedne klase postoji vise postRequest metoda pa njima se moze pristupiti preko ovog indikatora).
+     */
+    public void createPostRequestWithObjectReturned(String urlString, Map<String, Object> bodyParams, RequestTypeOfExpectedResponseEnum typeOfExpectedResponse, boolean sendAsJSON,
+                                                    final RequestWithObjectReturnedListener postWithObjectCallback, final boolean showLoadingDialog, String loadingDialogMessage, int loadingDialogStyle,
+                                                    LoadingDialogProgressStyleEnum loadingDialogProgressStyleEnum,
+                                                    boolean dismissLoadingDialogOnBackClick, String contentTypeString, Map<String, String> headerParamsMap, final Object model, final String tag) throws TagException {
+        if (context != null) {
+            if (urlString != null) {
+
+                this.requestWithObjectListenerCallback = postWithObjectCallback;
+
+                if (showLoadingDialog) {
+                    LoadingDialog loadingDialog = new LoadingDialog(loadingDialogMessage, dismissLoadingDialogOnBackClick,
+                            loadingDialogStyle, loadingDialogProgressStyleEnum, true, true);
+                    if (tag != null && !tag.equals("")) {
+                        for (Map.Entry<String, Object> entry : dialogsMap.entrySet()) {
+                            if (tag.equalsIgnoreCase(entry.getKey())) {
+                                loge("Tag already exist!");
+                                throw new TagException("Tag already exist!");
+                            }
+                        }
+                        dialogsMap.put(tag, loadingDialog);
+                        showLoadingDialog(context, loadingDialog, tag);
+                    }
+                }
+
+                postRequestBuilder = AndroidNetworking.post(urlString)
+                        .setOkHttpClient(getOkHttpClient());
+
+                if (contentTypeString != null && !contentTypeString.equals(""))
+                    postRequestBuilder.setContentType(contentTypeString);
+
+                if (headerParamsMap != null && headerParamsMap.size() > 0) {
+                    for (Map.Entry<String, String> entry : headerParamsMap.entrySet()) {
+                        postRequestBuilder.addHeaders(entry.getKey(), entry.getValue());
+                    }
+                }
+
+                if (tag != null && !tag.equals(""))
+                    postRequestBuilder.setTag(tag);
+
+                Map<String, Object> mainMap = new HashMap<>();
+
+                if (bodyParams != null)
+                    mainMap.putAll(bodyParams);
+
+                if (sendAsJSON) {
+                    JSONObject jsonObject = new JSONObject(mainMap);
+
+                    try {
+                        for (Map.Entry<String, Object> entry : mainMap.entrySet()) {
+                            jsonObject.put(entry.getKey(), entry.getValue());
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    postRequestBuilder.addStringBody(String.valueOf(jsonObject));
+                    logi("String body added");
+                } else if (!mainMap.isEmpty()) {
+                    for (Map.Entry<String, Object> entry : mainMap.entrySet()) {
+                        postRequestBuilder.addBodyParameter(entry.getKey(), String.valueOf(entry.getValue()));
+                    }
+                    logi("Parameters added");
+                }
+
+                if (typeOfExpectedResponse != null) {
+
+                    switch (typeOfExpectedResponse) {
+                        case JSON_OBJECT:
+                            postRequestBuilder.build().getAsJSONObject(new JSONObjectRequestListener() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+
+                                    if (response != null) {
+                                        logi("Successful response");
+                                        postWithObjectCallback.onRequestWithObjectLoadSuccessful(response, tag, model);
+                                    }
+
+                                    requestWithObjectListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+
+                                @Override
+                                public void onError(ANError anError) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+                                    postWithObjectCallback.onRequestWithObjectLoadFailed(anError, tag, model);
+                                    loge("onError " + "-> errorCode:" + String.valueOf(anError.getErrorCode()) + ", error:" + String.valueOf(anError.getErrorDetail()));
+
+                                    requestWithObjectListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+                            });
+                            break;
+
+                        case JSON_ARRAY:
+                            postRequestBuilder.build().getAsJSONArray(new JSONArrayRequestListener() {
+                                @Override
+                                public void onResponse(JSONArray response) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+                                    if (response != null) {
+                                        logi("Successful response");
+                                        postWithObjectCallback.onRequestWithObjectLoadSuccessful(response, tag, model);
+                                    }
+
+                                    requestWithObjectListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+
+                                @Override
+                                public void onError(ANError anError) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+                                    postWithObjectCallback.onRequestWithObjectLoadFailed(anError, tag, model);
+                                    loge("onError " + "-> errorCode:" + String.valueOf(anError.getErrorCode()) + ", error:" + String.valueOf(anError.getErrorDetail()));
+
+                                    requestWithObjectListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+                            });
+                            break;
+
+                        case STRING:
+                            postRequestBuilder.build().getAsString(new StringRequestListener() {
+                                @Override
+                                public void onResponse(String response) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+                                    if (response != null) {
+                                        logi("Successful response");
+                                        postWithObjectCallback.onRequestWithObjectLoadSuccessful(response, tag, model);
+                                    }
+
+                                    requestWithObjectListenerCallback = null;
+                                    postRequestBuilder = null;
+                                }
+
+                                @Override
+                                public void onError(ANError anError) {
+                                    if (showLoadingDialog) {
+                                        hideLoadingDialog(tag);
+                                        dialogsMap.remove(tag);
+                                    }
+                                    postWithObjectCallback.onRequestWithObjectLoadFailed(anError, tag, model);
+                                    loge("onError " + "-> errorCode:" + String.valueOf(anError.getErrorCode()) + ", error:" + String.valueOf(anError.getErrorDetail()));
+
+                                    requestWithObjectListenerCallback = null;
                                     postRequestBuilder = null;
                                 }
                             });
