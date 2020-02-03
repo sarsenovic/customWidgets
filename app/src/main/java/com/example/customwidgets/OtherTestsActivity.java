@@ -21,9 +21,9 @@ public class OtherTestsActivity extends AppCompatActivity implements CustomEditT
         setContentView(R.layout.activity_others_test);
 
         editText = findViewById(R.id.edit_text_test);
-        editText.setCallbackOnEditorActionListener(this);
-        editText.clearFocusAndCursor(EditorInfo.IME_ACTION_SEND, InputType.TYPE_CLASS_TEXT, false);
-        editText.allowContentScrolling();
+//        editText.setCallbackOnEditorActionListener(this);
+//        editText.clearFocusAndCursor(EditorInfo.IME_ACTION_SEND, InputType.TYPE_CLASS_TEXT, false);
+//        editText.allowContentScrolling();
     }
 
 //    @Override
@@ -36,13 +36,7 @@ public class OtherTestsActivity extends AppCompatActivity implements CustomEditT
 //    }
 
     @Override
-    public void onEditorActionListener(TextView textView, int actionId, KeyEvent event, EditText editText) {
-        switch (actionId) {
-            case EditorInfo.IME_ACTION_SEND:
-//                editText.setCursorVisible(false);
-//                editText.clearFocus();
-                Toast.makeText(this, "GOOD", Toast.LENGTH_SHORT).show();
-                break;
-        }
+    public void onEditorActionListener(TextView textView, int actionId, KeyEvent event, EditText editText, String tag) {
+
     }
 }
