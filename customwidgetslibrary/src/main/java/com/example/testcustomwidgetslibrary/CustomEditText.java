@@ -2,6 +2,8 @@ package com.example.testcustomwidgetslibrary;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.TypedArray;
+import android.text.InputType;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -17,6 +19,9 @@ public class CustomEditText extends EditText {
     private CustomEditTextListener callbackOnEditorActionListener;
     private boolean canDoSomething = true;
 
+    private boolean capsWords = false;
+    private boolean capsSentences = false;
+
     public CustomEditText(Context context) {
         super(context);
     }
@@ -24,11 +29,54 @@ public class CustomEditText extends EditText {
     public CustomEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
         setTypography(attrs);
+        attributesWorks(context, attrs);
     }
 
     public CustomEditText(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setTypography(attrs);
+        attributesWorks(context, attrs);
+    }
+
+    private void attributesWorks(Context context, AttributeSet attrs) {
+        if (attrs != null) {
+            TypedArray typedArray = context.getTheme().obtainStyledAttributes(attrs, R.styleable.CustomEditText, 0, 0);
+            try {
+                capsWords = typedArray.getBoolean(R.styleable.CustomEditText_caps_words, false);
+                capsSentences = typedArray.getBoolean(R.styleable.CustomEditText_caps_sentences, false);
+
+                if (capsWords)
+                    this.setInputType(InputType.TYPE_CLASS_TEXT |
+                            InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+                if (capsSentences)
+                    this.setInputType(InputType.TYPE_CLASS_TEXT |
+                            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+            } finally {
+                typedArray.recycle();
+            }
+        }
+    }
+
+    public boolean isCapsWords() {
+        return capsWords;
+    }
+
+    public void setCapsWords(boolean capsWords) {
+        this.capsWords = capsWords;
+        if (capsWords)
+            this.setInputType(InputType.TYPE_CLASS_TEXT |
+                    InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+    }
+
+    public boolean isCapsSentences() {
+        return capsSentences;
+    }
+
+    public void setCapsSentences(boolean capsSentences) {
+        this.capsSentences = capsSentences;
+        if (capsSentences)
+            this.setInputType(InputType.TYPE_CLASS_TEXT |
+                    InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
     }
 
     private void setTypography(AttributeSet attributeSet) {
@@ -58,6 +106,8 @@ public class CustomEditText extends EditText {
      * @param editorInfoImeOptions               EditorInfo options (ex. EditorInfo.IME_ACTION_DONE)
      * @param rawInputType                       Raw input type (ex. InputType.TYPE_CLASS_TEXT)
      * @param returnTypeOfOnEditorActionListener boolean which will be returned from setOnEditorActionListener
+     * @param tag                                String tag for callback recognize which object is in use
+     * @param object                             Object which will be returned in callback function
      */
     public void clearFocusAndCursor(final CustomEditTextListener callback, final int editorInfoImeOptions, int rawInputType, final boolean returnTypeOfOnEditorActionListener, final String tag, final Object object) {
         this.setImeOptions(editorInfoImeOptions);

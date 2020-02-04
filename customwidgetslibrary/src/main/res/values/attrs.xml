@@ -54,6 +54,8 @@
     <declare-styleable name="CustomEditText">
         <attr name="font_name" />
         <attr name="font_variant" />
+        <attr name="caps_words" format="boolean" />
+        <attr name="caps_sentences" format="boolean" />
         <!--<attr name="aspectRatio" />-->
         <!--<attr name="fixedParam" />-->
     </declare-styleable>
