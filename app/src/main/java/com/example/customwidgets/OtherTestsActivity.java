@@ -22,7 +22,7 @@ public class OtherTestsActivity extends AppCompatActivity implements CustomEditT
 
         editText = findViewById(R.id.edit_text_test);
 //        editText.setCallbackOnEditorActionListener(this);
-//        editText.clearFocusAndCursor(EditorInfo.IME_ACTION_SEND, InputType.TYPE_CLASS_TEXT, false);
+//        editText.clearFocusAndCursor(this, EditorInfo.IME_ACTION_DONE, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES, false, "", null);
 //        editText.allowContentScrolling();
     }
 

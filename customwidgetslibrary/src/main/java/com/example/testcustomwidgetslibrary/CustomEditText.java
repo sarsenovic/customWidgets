@@ -119,7 +119,7 @@ public class CustomEditText extends EditText {
                 setCursorVisible(false);
                 clearFocus();
                 hideKeyboard();
-                canDoSomething = false;
+//                canDoSomething = false;
                 if (callback != null)
                     callback.onEditorActionListener(v, actionId, event, CustomEditText.this, tag, object);
 
@@ -130,12 +130,12 @@ public class CustomEditText extends EditText {
         this.setOnClickListener((new OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (canDoSomething) {
-                    requestFocus();
-                    setCursorVisible(true);
-                } else {
-                    canDoSomething = true;
-                }
+//                if (canDoSomething) {
+                requestFocus();
+                setCursorVisible(true);
+//                } else {
+//                    canDoSomething = true;
+//                }
             }
         }));
     }
