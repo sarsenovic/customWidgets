@@ -36,7 +36,7 @@ public class OtherTestsActivity extends AppCompatActivity implements CustomEditT
 //    }
 
     @Override
-    public void onEditorActionListener(TextView textView, int actionId, KeyEvent event, EditText editText, String tag) {
+    public void onEditorActionListener(TextView textView, int actionId, KeyEvent event, EditText editText, String tag, Object object) {
 
     }
 }
