@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name="com.example.customwidgets.MainActivity">
+        <activity android:name="com.example.customwidgets.OtherTestsActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".OtherTestsActivity"
+            android:name=".MainActivity"
             android:screenOrientation="portrait" />
     </application>
 

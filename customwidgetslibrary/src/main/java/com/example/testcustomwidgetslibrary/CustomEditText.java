@@ -130,9 +130,9 @@ public class CustomEditText extends EditText {
         this.setOnClickListener((new OnClickListener() {
             @Override
             public void onClick(View v) {
+                setCursorVisible(true);
                 if (canDoSomething) {
                     requestFocus();
-                    setCursorVisible(true);
                 } else {
                     canDoSomething = true;
                 }
@@ -144,6 +144,13 @@ public class CustomEditText extends EditText {
         if (getContext() != null) {
             InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(this.getWindowToken(), 0);
+        }
+    }
+
+    private void showKeyboard() {
+        if (getContext() != null) {
+            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
         }
     }
 

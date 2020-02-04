@@ -21,9 +21,12 @@ public class OtherTestsActivity extends AppCompatActivity implements CustomEditT
         setContentView(R.layout.activity_others_test);
 
         editText = findViewById(R.id.edit_text_test);
+//        editText.clearFocusAndCursor(this, EditorInfo.IME_ACTION_DONE, InputType.TYPE_CLASS_TEXT |
+//                        InputType.TYPE_TEXT_FLAG_CAP_WORDS,
+//                false, "titleEtTag", null);
+//        editText.allowContentScrolling();
 //        editText.setCallbackOnEditorActionListener(this);
 //        editText.clearFocusAndCursor(this, EditorInfo.IME_ACTION_DONE, InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES, false, "", null);
-//        editText.allowContentScrolling();
     }
 
 //    @Override
