@@ -59,7 +59,7 @@ public class CustomEditText extends EditText {
      * @param rawInputType                       Raw input type (ex. InputType.TYPE_CLASS_TEXT)
      * @param returnTypeOfOnEditorActionListener boolean which will be returned from setOnEditorActionListener
      */
-    public void clearFocusAndCursor(final int editorInfoImeOptions, int rawInputType, final boolean returnTypeOfOnEditorActionListener, final String tag, final Object object) {
+    public void clearFocusAndCursor(final CustomEditTextListener callback, final int editorInfoImeOptions, int rawInputType, final boolean returnTypeOfOnEditorActionListener, final String tag, final Object object) {
         this.setImeOptions(editorInfoImeOptions);
         this.setRawInputType(rawInputType);
 
@@ -70,8 +70,8 @@ public class CustomEditText extends EditText {
                 clearFocus();
                 hideKeyboard();
                 canDoSomething = false;
-                if (callbackOnEditorActionListener != null)
-                    callbackOnEditorActionListener.onEditorActionListener(v, actionId, event, CustomEditText.this, tag, object);
+                if (callback != null)
+                    callback.onEditorActionListener(v, actionId, event, CustomEditText.this, tag, object);
 
                 return returnTypeOfOnEditorActionListener;
             }
