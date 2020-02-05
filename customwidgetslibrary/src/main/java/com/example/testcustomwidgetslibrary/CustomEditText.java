@@ -166,6 +166,9 @@ public class CustomEditText extends EditText {
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
                         break;
+                    case MotionEvent.ACTION_DOWN:
+                        setCursorVisible(true);
+                        break;
                 }
                 return false;
             }

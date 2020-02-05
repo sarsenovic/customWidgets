@@ -12,6 +12,7 @@
         <com.example.testcustomwidgetslibrary.CustomEditText
             android:id="@+id/edit_text_test"
             android:layout_width="match_parent"
+            android:inputType="textMultiLine"
             android:layout_height="50dp"
             android:maxLines="3" />
 
