@@ -32,6 +32,7 @@ public class ITSFileExplorerActivity extends AppCompatActivity implements ITSFil
     public static final String FILE_TYPE_BUNDLE_KEY = "KEYWORD_FILE_TYPE_BUNDLE";
     public static final String FILE_SIZE_LIMIT_MB_BUNDLE_KEY = "KEYWORD_FILE_SIZE_MB_LIMIT_BUNDLE";
     public static final String FILE_LIST_JUST_SELECTED_FILE_TYPE_BUNDLE_KEY = "KEYWORD_FILE_LIST_JUST_SELECTED_FILE_TYPE_BUNDLE";
+    public static final String RESULT_KEY_PATH = "RESULT_KEY_PATH";
     private RecyclerView recyclerView;
     private ITSFileExplorerRecyclerAdapter adapter;
     private String selectedAbsolutePath;
@@ -91,7 +92,7 @@ public class ITSFileExplorerActivity extends AppCompatActivity implements ITSFil
         if (fileModel.isSelected()) {
             this.selectedAbsolutePath = fileModel.getAbsolutePath();
             Intent resultIntent = new Intent();
-            resultIntent.putExtra("resultKey", selectedAbsolutePath);
+            resultIntent.putExtra(RESULT_KEY_PATH, selectedAbsolutePath);
             setResult(Activity.RESULT_OK, resultIntent);
             finish();
         } else {
