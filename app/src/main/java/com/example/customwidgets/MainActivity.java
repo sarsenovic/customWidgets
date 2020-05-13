@@ -1,12 +1,18 @@
 package com.example.customwidgets;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener2;
 import android.hardware.SensorManager;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -16,6 +22,7 @@ import android.widget.Toast;
 import com.example.testcustomwidgetslibrary.calendar.ITSCustomCalendarView;
 import com.example.testcustomwidgetslibrary.calendar.IndicatorShapes;
 import com.example.testcustomwidgetslibrary.calendar.event.Event;
+import com.example.testcustomwidgetslibrary.fileDirectory.ITSFileExplorerActivity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,16 +35,61 @@ public class MainActivity extends AppCompatActivity implements ITSCustomCalendar
     private Calendar calendar = Calendar.getInstance();
     private Sensor accelerometer;
     private SensorManager sensorManager;
+    private final String permission = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+    private final int file_explorer_request_result_code = 22;
+    private final int permissions_request_code = 23;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        itsCustomCalendarView = findViewById(R.id.its_calendar);
-        monthName = findViewById(R.id.month_name);
-        left = findViewById(R.id.text_left);
-        right = findViewById(R.id.text_right);
+//        calendarActions();
+//        monthName = findViewById(R.id.month_name);
+//
+//        monthName.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if (ContextCompat.checkSelfPermission(MainActivity.this, permission)
+//                        != PackageManager.PERMISSION_GRANTED) {
+//                    ActivityCompat.requestPermissions(MainActivity.this,
+//                            new String[]{permission},
+//                            23);
+//                } else {
+//                    Intent intent = new Intent(MainActivity.this, ITSFileExplorerActivity.class);
+//                    Bundle bundle = new Bundle();
+////                    bundle.putString(ITSFileExplorerActivity.FILE_TYPE_BUNDLE_KEY, "pdf");
+//                    bundle.putLong(ITSFileExplorerActivity.FILE_SIZE_LIMIT_MB_BUNDLE_KEY, 2);
+////                    bundle.putBoolean(ITSFileExplorerActivity.FILE_LIST_JUST_SELECTED_FILE_TYPE_BUNDLE_KEY, false);
+//                    intent.putExtras(bundle);
+//                    startActivityForResult(intent, 10);
+//                }
+//            }
+//        });
+
+    }
+
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        if (resultCode == RESULT_OK) {
+//            if (requestCode == 10) {
+//                if (data != null) {
+//
+//                    String selectedAbsolutePath = data.getStringExtra("resultKey");
+//                    Toast.makeText(MainActivity.this, selectedAbsolutePath, Toast.LENGTH_SHORT).show();
+//
+//                    System.out.println();
+//                }
+//            }
+//        }
+//    }
+
+    private void calendarActions() {
+//        itsCustomCalendarView = findViewById(R.id.its_calendar);
+//        monthName = findViewById(R.id.month_name);
+//        left = findViewById(R.id.text_left);
+//        right = findViewById(R.id.text_right);
 
         itsCustomCalendarView.setListener(this);
 //        itsCustomCalendarView.setLocale(TimeZone.getTimeZone("America/Los_Angeles"), Locale.US);
